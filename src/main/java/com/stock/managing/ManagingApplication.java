@@ -1,0 +1,13 @@
+package com.stock.managing;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class ManagingApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(ManagingApplication.class, args);
+    }
+
+}
