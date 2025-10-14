@@ -2,6 +2,7 @@ package com.stock.managing.repository;
 
 
 import com.stock.managing.domain.Board;
+import com.stock.managing.dto.BoardListReplyCountDTO;
 import lombok.extern.log4j.Log4j2;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +24,7 @@ public class BoardRepositoryTests {
     @Autowired
     private BoardRepository boardRepository;
 
-    @Test
+/*    @Test
     public void testInsert() {
         IntStream.rangeClosed(1, 100).forEach(i -> {
             Board board = Board.builder()
@@ -35,9 +36,9 @@ public class BoardRepositoryTests {
             Board result = boardRepository.save(board);
             log.info("BNO: " + result.getBno());
         });
-    }
+    }*/
 
-    @Test
+/*    @Test
     public void testSelect() {
         Long bno = 100L;
 
@@ -47,9 +48,9 @@ public class BoardRepositoryTests {
 
         log.info(board);
 
-    }
+    }*/
 
-    @Test
+/*    @Test
     public void testUpdate() {
 
         Long bno = 100L;
@@ -63,16 +64,16 @@ public class BoardRepositoryTests {
 
         boardRepository.save(board);
 
-    }
+    }*/
 
-    @Test
+/*    @Test
     public void testDelete() {
         Long bno = 1L;
 
         boardRepository.deleteById(bno);
-    }
+    }*/
 
-    @Test
+/*    @Test
     public void testPaging() {
 
         Pageable pageable = PageRequest.of(0, 10, Sort.by("bno").descending());
@@ -88,18 +89,18 @@ public class BoardRepositoryTests {
 
         todoList.forEach(board -> log.info(board));
 
-    }
+    }*/
 
-    @Test
+/*    @Test
     public void testSearch1() {
 
         Pageable pageable = PageRequest.of(1, 10, Sort.by("bno").descending());
 
         boardRepository.search1(pageable);
 
-    }
+    }*/
 
-    @Test
+/*    @Test
     public void testSearchAll() {
 
         String[] types = {"t", "c", "w"};
@@ -117,6 +118,26 @@ public class BoardRepositoryTests {
         log.info(result.getNumber());
 
         log.info(result.hasPrevious() + ": " + result.hasNext());
+        result.getContent().forEach(board -> log.info(board));
+
+    }*/
+
+    @Test
+    public void testSearchReplyCount(){
+        String[] types = {"t","c","w"};
+        String keyword = "1";
+        Pageable pageable = PageRequest.of(0,10, Sort.by("bno").descending());
+
+        Page<BoardListReplyCountDTO> result = boardRepository.searchWithReplyCount(types, keyword, pageable);
+
+        log.info(result.getTotalPages());
+
+        log.info(result.getSize());
+
+        log.info(result.getNumber());
+
+        log.info(result.hasPrevious() + ":" + result.hasNext());
+
         result.getContent().forEach(board -> log.info(board));
 
     }
