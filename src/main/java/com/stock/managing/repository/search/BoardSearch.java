@@ -1,10 +1,11 @@
 package com.stock.managing.repository.search;
 
-
 import com.stock.managing.domain.Board;
+import com.stock.managing.dto.BoardListAllDTO;
 import com.stock.managing.dto.BoardListReplyCountDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
 
 public interface BoardSearch {
 
@@ -15,6 +16,14 @@ public interface BoardSearch {
     Page<BoardListReplyCountDTO> searchWithReplyCount(String[] types,
                                                       String keyword,
                                                       Pageable pageable);
+
+//    Page<BoardListReplyCountDTO> searchWithAll(String[] types,
+//                                               String keyword,
+//                                               Pageable pageable);
+
+    Page<BoardListAllDTO> searchWithAll(String[] types,
+                                        String keyword,
+                                        Pageable pageable);
 
 
 }

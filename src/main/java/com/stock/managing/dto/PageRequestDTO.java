@@ -12,7 +12,6 @@ import org.springframework.data.domain.Sort;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
-
 @Builder
 @Data
 @AllArgsConstructor

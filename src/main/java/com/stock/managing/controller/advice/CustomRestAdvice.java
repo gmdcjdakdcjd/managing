@@ -1,4 +1,4 @@
-package org.zerock.b01.controller.advice;
+package com.stock.managing.controller.advice;
 
 import lombok.extern.log4j.Log4j2;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -18,6 +18,25 @@ import java.util.NoSuchElementException;
 @RestControllerAdvice
 @Log4j2
 public class CustomRestAdvice {
+
+//    @ExceptionHandler(BindException.class)
+//    @ResponseStatus(HttpStatus.EXPECTATION_FAILED)
+//    public ResponseEntity<Map<String, String>> handleBindException(BindException e) {
+//
+//        log.error(e);
+//
+//        Map<String, String> errorMap = new HashMap<>();
+//
+//        if(e.hasErrors()){
+//            BindingResult bindingResult = e.getBindingResult();
+//
+//            bindingResult.getFieldErrors().forEach(fieldError -> {
+//                errorMap.put(fieldError.getField(), fieldError.getCode());
+//            });
+//        }
+//
+//        return ResponseEntity.badRequest().body(errorMap);
+//    }
 
     @ExceptionHandler(BindException.class)
     @ResponseStatus(HttpStatus.EXPECTATION_FAILED)
@@ -50,8 +69,22 @@ public class CustomRestAdvice {
         return ResponseEntity.badRequest().body(errorMap);
     }
 
+//    @ExceptionHandler(NoSuchElementException.class)
+//    @ResponseStatus(HttpStatus.EXPECTATION_FAILED)
+//    public ResponseEntity<Map<String, String>> handleNoSuchElement(Exception e) {
+//
+//        log.error(e);
+//
+//        Map<String, String> errorMap = new HashMap<>();
+//
+//        errorMap.put("time", ""+System.currentTimeMillis());
+//        errorMap.put("msg",  "No Such Element Exception");
+//        return ResponseEntity.badRequest().body(errorMap);
+//    }
 
-    @ExceptionHandler({NoSuchElementException.class,EmptyResultDataAccessException.class})
+    @ExceptionHandler({
+            NoSuchElementException.class,
+            EmptyResultDataAccessException.class }) //추가
     @ResponseStatus(HttpStatus.EXPECTATION_FAILED)
     public ResponseEntity<Map<String, String>> handleNoSuchElement(Exception e) {
 
@@ -59,8 +92,8 @@ public class CustomRestAdvice {
 
         Map<String, String> errorMap = new HashMap<>();
 
-        errorMap.put("time", "" + System.currentTimeMillis());
-        errorMap.put("msg", "No Such Element Exception");
+        errorMap.put("time", ""+System.currentTimeMillis());
+        errorMap.put("msg",  "No Such Element Exception");
         return ResponseEntity.badRequest().body(errorMap);
     }
 }

@@ -1,5 +1,6 @@
 package com.stock.managing.dto;
 
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,19 +10,21 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class BoardDTO {
+@Builder
+public class BoardListAllDTO {
 
     private Long bno;
+
     private String title;
-    private String content;
+
     private String writer;
+
     private LocalDateTime regDate;
-    private LocalDateTime modDate;
 
-    //첨부파일의 이름들
-    private List<String> fileNames;
+    private Long replyCount;
 
+
+    private List<BoardImageDTO> boardImages;
 }

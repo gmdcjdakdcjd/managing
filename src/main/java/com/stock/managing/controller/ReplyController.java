@@ -15,6 +15,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,15 +28,15 @@ public class ReplyController {
     private final ReplyService replyService;
 
 
-    @Operation(description = "Replies POST"  )
+    @Operation(description = "Replies POST")
     @PostMapping(value = "/", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public Map<String,Long> register(
+    public Map<String, Long> register(
             @Valid @RequestBody ReplyDTO replyDTO,
-            BindingResult bindingResult)throws BindException {
+            BindingResult bindingResult) throws BindException {
 
         log.info(replyDTO);
 
-        if(bindingResult.hasErrors()){
+        if (bindingResult.hasErrors()) {
             throw new BindException(bindingResult);
         }
 
@@ -43,7 +44,7 @@ public class ReplyController {
 
         Long rno = replyService.register(replyDTO);
 
-        resultMap.put("rno",rno);
+        resultMap.put("rno", rno);
 
         return resultMap;
     }
@@ -51,7 +52,7 @@ public class ReplyController {
     @Operation(description = "GET 방식으로 특정 게시물의 댓글 목록")
     @GetMapping(value = "/list/{bno}")
     public PageResponseDTO<ReplyDTO> getList(@PathVariable("bno") Long bno,
-                                             PageRequestDTO pageRequestDTO){
+                                             PageRequestDTO pageRequestDTO) {
 
         PageResponseDTO<ReplyDTO> responseDTO = replyService.getListOfBoard(bno,
                 pageRequestDTO);
@@ -61,14 +62,14 @@ public class ReplyController {
 
     @Operation(description = "GET 방식으로 특정 댓글 조회")
     @GetMapping("/{rno}")
-    public ReplyDTO getReplyDTO( @PathVariable("rno") Long rno ){
+    public ReplyDTO getReplyDTO(@PathVariable("rno") Long rno) {
         ReplyDTO replyDTO = replyService.read(rno);
         return replyDTO;
     }
 
     @Operation(description = "DELETE 방식으로 댓글 처리")
     @DeleteMapping("/{rno}")
-    public Map<String,Long> remove( @PathVariable("rno") Long rno ){
+    public Map<String, Long> remove(@PathVariable("rno") Long rno) {
 
         replyService.remove(rno);
 
@@ -80,9 +81,9 @@ public class ReplyController {
     }
 
     @Operation(description = "PUT 방식으로 댓글 처리")
-    @PutMapping(value = "/{rno}", consumes = MediaType.APPLICATION_JSON_VALUE )
-    public Map<String,Long> remove( @PathVariable("rno") Long rno, @RequestBody
-    ReplyDTO replyDTO ){
+    @PutMapping(value = "/{rno}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, Long> remove(@PathVariable("rno") Long rno, @RequestBody
+    ReplyDTO replyDTO) {
 
         replyDTO.setRno(rno); //번호를 일치시킴
 
