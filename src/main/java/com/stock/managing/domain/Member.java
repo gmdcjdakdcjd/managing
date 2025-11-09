@@ -1,9 +1,6 @@
 package com.stock.managing.domain;
 
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.HashSet;
@@ -15,6 +12,7 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString(exclude = "roleSet")
+
 public class Member {
 
     @Id
@@ -28,6 +26,7 @@ public class Member {
 
     @ElementCollection(fetch = FetchType.LAZY)
     @Builder.Default
+    @Enumerated(EnumType.STRING)
     private Set<MemberRole> roleSet = new HashSet<>();
 
     public void changePassword(String mpw) {

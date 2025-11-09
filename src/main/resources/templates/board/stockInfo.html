@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/basic.html}">
+<head>
+    <meta charset="UTF-8">
+    <title>종목 검색</title>
+
+    <link rel="stylesheet" th:href="@{/css/markdown.css}">
+
+    <style>
+        .momentum-grid {
+            display: grid;
+            grid-template-columns: 2fr 2fr;
+            gap: 1rem;
+            align-items: start;
+        }
+
+        .momentum-grid > .d-flex {
+            align-self: flex-start;
+        }
+
+        .card {
+            margin-bottom: 0 !important;
+        }
+
+        .d-flex.flex-column.gap-3 > .card + .card {
+            margin-top: 0.5rem !important;
+        }
+
+        #stockChart {
+            width: 100% !important;
+            height: 100% !important;
+            touch-action: none;
+        }
+
+        .signal-card .card-body {
+            padding-top: 1.2rem !important;
+            padding-bottom: 1.2rem !important;
+            line-height: 1.5;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 470px;
+            overflow: visible;
+            cursor: grab;
+        }
+    </style>
+</head>
+
+<body>
+<div layout:fragment="content" class="container mt-4">
+    <h3 class="fw-bold mb-4">📊 종목 검색</h3>
+
+    <!-- 🔍 검색 Form -->
+    <form action="/board/searchStock" method="get" class="row g-2 align-items-end mb-4">
+        <div class="col-md-4">
+            <label for="stockName" class="form-label small fw-semibold mb-1">종목명</label>
+            <input type="text" class="form-control" id="stockName" name="stockName"
+                   placeholder="예: 삼성전자" th:value="${param.stockName}">
+        </div>
+        <div class="col-md-4">
+            <label for="stockCode" class="form-label small fw-semibold mb-1">종목코드</label>
+            <input type="text" class="form-control" id="stockCode" name="stockCode"
+                   placeholder="예: 005930" th:value="${param.stockCode}">
+        </div>
+        <div class="col-md-4 d-flex flex-column justify-content-end">
+            <label class="form-label small fw-semibold mb-1 invisible">검색</label>
+            <button type="submit" class="btn btn-primary w-100 fw-semibold">🔍 검색</button>
+        </div>
+    </form>
+
+    <!-- ⚠️ 오류 메시지 -->
+    <div th:if="${error}" class="alert alert-warning small" th:text="${error}"></div>
+
+    <!-- ✅ 검색 결과 -->
+    <div th:if="${stock != null}" class="momentum-grid">
+        <!-- 📈 시세 테이블 -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-white fw-bold">
+                [[${stock.name}]] ( [[${stock.code}]] ) — [[${stock.marketType}]]
+            </div>
+            <div class="card-body p-0" style="max-height: 765px; overflow-y: auto;">
+                <table class="table table-hover table-striped mb-0 text-center align-middle">
+                    <thead class="table-light sticky-top" style="top: 0; z-index: 1;">
+                    <tr>
+                        <th>일자</th>
+                        <th>종가</th>
+                        <th>거래량</th>
+                        <th>시가</th>
+                        <th>고가</th>
+                        <th>저가</th>
+                    </tr>
+                    </thead>
+
+                    <tbody th:if="${priceList != null}">
+                    <tr th:each="row : ${priceList}">
+                        <td th:text="${row.date != null ? row.date : '-'}"></td>
+                        <td th:text="${(stock.marketType == 'KOSPI' or stock.marketType == 'KOSDAQ') ? #numbers.formatInteger(row.close, 0, 'COMMA') + '원' : '$' + #numbers.formatInteger(row.close, 0, 'COMMA')}"></td>
+                        <td th:text="${#numbers.formatInteger(row.volume, 0, 'COMMA')}"></td>
+                        <td th:text="${(stock.marketType == 'KOSPI' or stock.marketType == 'KOSDAQ') ? #numbers.formatInteger(row.open, 0, 'COMMA') + '원' : '$' + #numbers.formatInteger(row.open, 0, 'COMMA')}"></td>
+                        <td th:text="${(stock.marketType == 'KOSPI' or stock.marketType == 'KOSDAQ') ? #numbers.formatInteger(row.high, 0, 'COMMA') + '원' : '$' + #numbers.formatInteger(row.high, 0, 'COMMA')}"></td>
+                        <td th:text="${(stock.marketType == 'KOSPI' or stock.marketType == 'KOSDAQ') ? #numbers.formatInteger(row.low, 0, 'COMMA') + '원' : '$' + #numbers.formatInteger(row.low, 0, 'COMMA')}"></td>
+                    </tr>
+                    </tbody>
+
+                </table>
+            </div>
+        </div>
+
+        <!-- 📊 오른쪽 차트 -->
+        <div class="d-flex flex-column gap-3" style="align-self:flex-start; height:auto;">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+                    <span>차트</span>
+                    <button id="resetChartBtn" class="btn btn-outline-secondary btn-sm">🔄 초기화</button>
+                </div>
+                <div class="card-body chart-container">
+                    <canvas id="stockChart"></canvas>
+                </div>
+            </div>
+
+
+            <!-- 🧭 조건 포착 정보 -->
+            <div class="card shadow-sm signal-card">
+                <div class="card-header bg-white fw-bold">조건 포착 정보</div>
+                <div class="card-body small">
+                    <div class="text-muted">
+                        <span>※ 본 종목은 아래 조건으로 자동 포착되었습니다.</span>
+                        <div class="table-wrapper mt-2"
+                             style="max-height: 160px; overflow-y: auto; border: 1px solid #ddd;">
+                            <table class="table table-sm text-center mb-0">
+                                <thead class="table-light"
+                                       style="position: sticky; top: 0; background: #f8f9fa; z-index: 2;">
+                                <tr>
+                                    <th>전략명</th>
+                                    <th>포착일</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="info : ${signalList}">
+                                    <td th:text="${info.strategyName}"></td>
+                                    <td th:text="${info.signalDate}"></td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- ✅ Script는 항상 body 제일 아래 -->
+<th:block layout:fragment="script">
+
+    <!-- ✅ Chart.js + Adapter + Zoom 플러그인 (로컬 버전) -->
+    <script th:src="@{/js/chart/chart.umd.min.js}"></script>
+    <script th:src="@{/js/chart/chartjs-adapter-date-fns.bundle.min.js}"></script>
+    <script th:src="@{/js/chart/chartjs-plugin-zoom.min.js}"></script>
+
+    <script th:inline="javascript">
+        document.addEventListener("DOMContentLoaded", () => {
+            console.log("✅ 종목 검색 스크립트 실행");
+
+            // ✅ 시장 구분 값 (Thymeleaf에서 안전하게 인라인 처리)
+            const marketType = /*[[${stock != null ? (stock.marketType != null ? "'" + stock.marketType + "'" : "null") : "null"}]]*/ null;
+
+            // ✅ Fallback 방어 로직 (렌더링이 안 됐을 경우만 기본값 부여)
+            const resolvedMarket = marketType?.replaceAll("'", "") || "KOSPI";
+            console.log("✅ 시장 구분:", resolvedMarket);
+
+            const rows = document.querySelectorAll("table.table tbody tr");
+            if (!rows.length) return;
+
+            const priceData = Array.from(rows).map(row => {
+                const tds = row.querySelectorAll("td");
+                const dateText = tds[0]?.innerText?.trim();
+                const closeText = tds[1]?.innerText?.replace(/[^0-9]/g, "");
+                if (!dateText || !closeText) return null;
+                const [y, m, d] = dateText.split(/[.\-]/).map(Number);
+                return { x: new Date(y, m - 1, d), y: Number(closeText) };
+            }).filter(p => p && !isNaN(p.y));
+
+            console.log("✅ 추출된 priceData:", priceData);
+
+            const ctx = document.getElementById("stockChart").getContext("2d");
+
+            let minDate, maxDate;
+            if (priceData.length > 0) {
+                const timestamps = priceData
+                    .map(p => p.x instanceof Date ? p.x.getTime() : new Date(p.x).getTime())
+                    .filter(t => !isNaN(t));
+
+                minDate = new Date(Math.min(...timestamps));
+                maxDate = new Date(Math.max(...timestamps));
+
+                console.log("✅ 데이터 범위 계산 완료");
+            } else {
+                console.warn("⚠️ priceData 비어 있음 — min/max 계산 스킵");
+            }
+
+            console.log("✅ 데이터 범위:", minDate, "부터", maxDate, "까지");
+            console.log("🔍 priceData 샘플:", priceData.slice(0, 5));
+
+            // ✅ 차트 생성
+            const chart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    datasets: [{
+                        label: "종가",
+                        data: priceData,
+                        borderColor: "rgba(75,192,192,1)",
+                        backgroundColor: "rgba(75,192,192,0.2)",
+                        fill: true,
+                        tension: 0.1,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: "time",
+                            time: {
+                                unit: "day",
+                                tooltipFormat: "yyyy-MM-dd",        // 툴팁에 표시될 형식
+                                displayFormats: { day: "yyyy-MM-dd" } // X축 눈금(label)에 표시될 형식
+                            },
+                            grid: { display: false },
+                            min: (() => {
+                                const now = new Date();
+                                const monthAgo = new Date(now);
+                                monthAgo.setMonth(now.getMonth() - 1);
+                                return monthAgo;
+                            })(),
+                            max: new Date()
+                        },
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function (value) {
+                                    // ✅ 시장 구분에 따른 화폐 단위 처리
+                                    if (resolvedMarket === "KOSPI" || resolvedMarket === "KOSDAQ") {
+                                        return value.toLocaleString() + "원";
+                                    } else {
+                                        return "$" + value.toLocaleString();
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        zoom: {
+                            pan: {
+                                enabled: true,
+                                mode: "x",
+                                modifierKey: "shift"
+                            },
+                            zoom: {
+                                wheel: { enabled: true, speed: 0.1 },
+                                pinch: { enabled: true },
+                                mode: "x"
+                            },
+                            limits: {
+                                x: { max: "original", min: minDate }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // ✅ 더블클릭 리셋
+            document.getElementById("stockChart")
+                .addEventListener("dblclick", () => chart.resetZoom && chart.resetZoom());
+
+            // ✅ 초기화 버튼 클릭 시 줌/이동 리셋
+            document.getElementById("resetChartBtn")
+                ?.addEventListener("click", () => chart.resetZoom && chart.resetZoom());
+        });
+    </script>
+
+</th:block>
+</body>
+</html>

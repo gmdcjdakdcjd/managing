@@ -24,15 +24,17 @@ public class PageRequestDTO {
     @Builder.Default
     private int size = 10;
 
-    private String type; // 검색의 종류 t,c, w, tc,tw, twc
+    private String type; // 검색의 종류
 
     private String keyword;
 
-    public String[] getTypes(){
-        if(type == null || type.isEmpty()){
+    private String regDate;
+
+    public String[] getTypes() {
+        if (type == null || type.isEmpty()) {
             return null;
         }
-        return type.split("");
+        return new String[]{type}; // ✅ 문자열 전체를 배열로
     }
 
     public Pageable getPageable(String...props) {
@@ -59,6 +61,12 @@ public class PageRequestDTO {
                 } catch (UnsupportedEncodingException e) {
                 }
             }
+
+            if (regDate != null && !regDate.isEmpty()) {
+                builder.append("&regDate=" + regDate);
+            }
+
+
             link = builder.toString();
         }
 

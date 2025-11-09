@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/basic.html}">
+<head>
+    <meta charset="UTF-8">
+    <title>듀얼 모멘텀 비교</title>
+
+    <!-- ✅ Markdown 스타일 -->
+    <link rel="stylesheet" th:href="@{/css/markdown.css}">
+
+    <style>
+        <style>
+        .momentum-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .momentum-card {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 1.2rem;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .momentum-card h5 {
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .content-box {
+            max-height: 420px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            padding-right: 0.5rem;
+            scrollbar-width: thin;
+        }
+
+        /* ✅ 1년 모멘텀 전용 - 가로 전체 확장 + 높이도 넉넉히 */
+        .momentum-wide {
+            grid-column: span 2;
+            max-height: none;
+        }
+
+        .momentum-wide .content-box {
+            max-height: 600px; /* 좀 더 긴 리스트도 스크롤 가능 */
+        }
+
+        .momentum-card {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 1.2rem;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 0.8rem;   /* ✅ 카드 사이 세로 간격 */
+        }
+
+        .momentum-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;              /* ✅ 카드 간 가로/세로 간격 */
+        }
+    </style>
+
+    </style>
+</head>
+
+<body>
+<div layout:fragment="content" class="container mt-4">
+    <h3 class="fw-bold mb-4">📊 듀얼 모멘텀 전략별 결과 비교</h3>
+
+    <div class="momentum-grid">
+
+        <!-- 20일 -->
+        <div class="momentum-card momentum-wide">
+            <h5 class="text-success ">🟢 20일 모멘텀</h5>
+            <div class="content-box">
+                <div th:each="dto : ${monthList}">
+                    <div class="markdown-body" th:utext="${dto.content}"></div>
+                    <hr/>
+                </div>
+            </div>
+        </div>
+
+        <!-- 60일 -->
+        <div class="momentum-card momentum-wide">
+            <h5 class="text-warning">🟡 60일 모멘텀</h5>
+            <div class="content-box">
+                <div th:each="dto : ${quarterList}">
+                    <div class="markdown-body" th:utext="${dto.content}"></div>
+                    <hr/>
+                </div>
+            </div>
+        </div>
+
+        <!-- 180일 -->
+        <div class="momentum-card momentum-wide" >
+            <h5 class="text-danger">🔴 180일 모멘텀</h5>
+            <div class="content-box">
+                <div th:each="dto : ${halfList}">
+                    <div class="markdown-body" th:utext="${dto.content}"></div>
+                    <hr/>
+                </div>
+            </div>
+        </div>
+
+        <!-- 365일 -->
+        <div class="momentum-card momentum-wide">
+            <h5 class="text-secondary">⚫ 365일 모멘텀</h5>
+            <div class="content-box">
+                <div th:each="dto : ${yearList}">
+                    <div class="markdown-body" th:utext="${dto.content}"></div>
+                    <hr/>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!--미국 시작-->
+
+        <div class="momentum-card momentum-wide">
+            <h5 class="text-success ">🟢 미국 20일 모멘텀</h5>
+            <div class="content-box">
+                <div th:each="dto : ${monthList_US}">
+                    <div class="markdown-body" th:utext="${dto.content}"></div>
+                    <hr/>
+                </div>
+            </div>
+        </div>
+
+        <!-- 60일 -->
+        <div class="momentum-card momentum-wide">
+            <h5 class="text-warning">🟡 미국 60일 모멘텀</h5>
+            <div class="content-box">
+                <div th:each="dto : ${quarterList_US}">
+                    <div class="markdown-body" th:utext="${dto.content}"></div>
+                    <hr/>
+                </div>
+            </div>
+        </div>
+
+        <!-- 180일 -->
+        <div class="momentum-card momentum-wide" >
+            <h5 class="text-danger">🔴 미국 180일 모멘텀</h5>
+            <div class="content-box">
+                <div th:each="dto : ${halfList_US}">
+                    <div class="markdown-body" th:utext="${dto.content}"></div>
+                    <hr/>
+                </div>
+            </div>
+        </div>
+
+        <!-- 365일 -->
+        <div class="momentum-card momentum-wide">
+            <h5 class="text-secondary">⚫미국  365일 모멘텀</h5>
+            <div class="content-box">
+                <div th:each="dto : ${yearList_US}">
+                    <div class="markdown-body" th:utext="${dto.content}"></div>
+                    <hr/>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+</body>
+</html>

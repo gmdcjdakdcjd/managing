@@ -252,7 +252,7 @@ public class BoardRepositoryTests {
         Pageable pageable = PageRequest.of(0, 10, Sort.by("bno").descending());
         //boardRepository.searchWithAll(null, null, pageable);
 
-        Page<BoardListAllDTO> result = boardRepository.searchWithAll(null, null, pageable);
+        Page<BoardListAllDTO> result = boardRepository.searchWithAll(null, null, null, pageable);
 
         log.info("=============================");
         log.info(result.getTotalElements());

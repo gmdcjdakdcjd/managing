@@ -55,6 +55,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
 
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+
+    // Markdown rendering
+    implementation 'com.vladsch.flexmark:flexmark-all:0.64.8'
+    implementation 'org.jsoup:jsoup:1.17.2'
 }
 
 tasks.named('test') {

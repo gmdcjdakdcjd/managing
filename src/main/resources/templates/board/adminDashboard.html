@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/basic.html}">
+<head>
+  <meta charset="UTF-8">
+  <title>배치 실행 현황 (관리자용)</title>
+
+  <!-- ✅ GitHub Markdown 스타일 -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown-light.min.css"/>
+
+  <style>
+    .admin-container {
+      max-width: 900px; /* 🔽 기존 1250 → 900 */
+      margin: 1.5rem auto;
+      background: #fff;
+      padding: 1.5rem 2rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .admin-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    table.admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    table.admin-table th,
+    table.admin-table td {
+      padding: 0.35rem 0.6rem;
+      border-bottom: 1px solid #e2e2e2;
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    table.admin-table th {
+      font-weight: 600;
+      background-color: #f7f8fa;
+    }
+
+    table.admin-table tr:hover {
+      background-color: rgba(0,0,0,0.02);
+    }
+
+    .toggle-btn {
+      cursor: pointer;
+      color: #0d6efd;
+      font-weight: 600;
+    }
+
+    .detail-row { display: none; }
+
+    .detail-box {
+      background-color: #f9fafb;
+      border-radius: 4px;
+      padding: 0.6rem 0.8rem;
+      font-size: 0.85rem;
+      border-top: 1px solid #ddd;
+      margin-top: -1px;
+    }
+
+    /* ✅ markdown 본문 영역 */
+    .markdown-body {
+      background: #fff;
+      padding: 1rem;
+      border-radius: 6px;
+      border: 1px solid #e2e2e2;
+      overflow-x: auto;
+    }
+
+    .markdown-body {
+      font-size: 0.85rem;
+    }
+
+    .markdown-body table {
+      font-size: 0.8rem;
+      width: 95%;
+      margin: 0 auto;
+    }
+
+    .detail-box .markdown-body {
+      max-width: 800px;
+    }ㅣ
+  </style>
+
+  <script>
+    function toggleDetail(rowId) {
+      document.querySelectorAll('.detail-row').forEach(row => {
+        if (row.id !== rowId) row.style.display = 'none';
+      });
+
+      const target = document.getElementById(rowId);
+      if (!target) return;
+
+      const isHidden = target.style.display === 'none' || target.style.display === '';
+      target.style.display = isHidden ? 'table-row' : 'none';
+    }
+  </script>
+</head>
+
+<body>
+<div layout:fragment="content" class="admin-container">
+  <h3 class="admin-title">🧩 배치 실행 현황 (관리자용)</h3>
+
+  <table class="admin-table">
+    <thead>
+    <tr>
+      <th>📅 날짜</th>
+      <th>관리 종목</th>
+      <th>실행주체</th>
+      <th>배치 그룹</th>
+      <th class="icon-col">상세결과</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    <th:block th:each="report : ${reports}">
+      <tr>
+        <td th:text="${#strings.substring(report.title, 7, 18)}"></td>
+        <td>코스피 / ETF / S&P</td>
+        <td th:text="${report.writer}"></td>
+        <td class="toggle-btn"
+            th:onclick="|toggleDetail('detail-batch-${report.bno}')|">+ 배치</td>
+        <td class="icon-col">
+          <a class="btn-icon"
+             th:if="${report.fileNames != null and #lists.size(report.fileNames) > 0}"
+             th:href="@{/view/{fileName}(fileName=${report.fileNames[0]})}"
+             target="_blank">👁</a>
+        </td>
+      </tr>
+
+      <!-- ✅ 상세행을 같은 each 블록 안으로 포함 -->
+      <tr th:id="|detail-batch-${report.bno}|" class="detail-row">
+        <td colspan="9">
+          <div class="detail-box">
+            <p><strong>📂 상세 배치 목록</strong></p>
+
+            <div class="markdown-body" th:utext="${report.content}"></div>
+          </div>
+        </td>
+      </tr>
+    </th:block>
+    </tbody>
+
+  </table>
+</div>
+</body>
+</html>

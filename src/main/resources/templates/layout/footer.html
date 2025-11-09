@@ -1,0 +1,20 @@
+<!-- 📁 fragments/footer.html -->
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<footer th:fragment="footerFragment"
+        class="mt-5 py-3 border-top text-center text-muted small">
+    © 2025 STOCK PROJECT · All rights reserved · v2.1.0
+    · <span th:text="${#dates.format(#dates.createNow(), 'yyyy-MM-dd')}"></span>
+
+    <!-- 🔹 로그인 안 된 상태 -->
+    <span sec:authorize="isAnonymous()">
+        · <a th:href="@{/member/join}" class="text-decoration-none text-muted">회원가입</a>
+        · <a th:href="@{/member/login}" class="text-decoration-none text-muted">관리자 로그인</a>
+    </span>
+
+    <!-- 🔹 로그인 된 상태 -->
+    <span sec:authorize="isAuthenticated()">
+        · <a th:href="@{/logout}" class="text-decoration-none text-muted">로그아웃</a>
+    </span>
+</footer>

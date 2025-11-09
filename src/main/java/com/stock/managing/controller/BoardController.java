@@ -1,10 +1,10 @@
 package com.stock.managing.controller;
 
-import com.stock.managing.dto.BoardDTO;
-import com.stock.managing.dto.BoardListAllDTO;
-import com.stock.managing.dto.PageRequestDTO;
-import com.stock.managing.dto.PageResponseDTO;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.stock.managing.dto.*;
 import com.stock.managing.service.BoardService;
+import com.stock.managing.service.StockViewService;
 import org.springframework.beans.factory.annotation.Value;
 
 
@@ -21,12 +21,20 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 
 import java.io.File;
 import java.nio.file.Files;
+import java.time.LocalDate;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import com.stock.managing.service.MarkdownService; // added
+import org.springframework.beans.factory.annotation.Value; // keep single import
 
 
 @Controller
@@ -36,37 +44,195 @@ import java.util.List;
 public class BoardController {
 
     private final BoardService boardService;
+    private final MarkdownService markdownService; // added
+    private final StockViewService stockService;
 
-    @Value("${com.stock.upload.path}")// import 시에 springframework으로 시작하는 Value
+
+    @Value("${com.stock.upload.path}")
     private String uploadPath;
 
+    // 한국 주식
     @GetMapping("/list")
     public void list(PageRequestDTO pageRequestDTO, Model model) {
 
-        //PageResponseDTO<BoardDTO> responseDTO = boardService.list(pageRequestDTO);
+        PageResponseDTO<BoardListAllDTO> responseDTO = boardService.listWithAll(pageRequestDTO);
 
-        PageResponseDTO<BoardListAllDTO> responseDTO =
-                boardService.listWithAll(pageRequestDTO);
+        log.info(responseDTO);
+
+        model.addAttribute("responseDTO", responseDTO);
+    }
+    // 미국 주식
+    @GetMapping("/listUS")
+    public void listUS(PageRequestDTO pageRequestDTO, Model model) {
+
+        PageResponseDTO<BoardListAllDTO> responseDTO = boardService.listWithAllUS(pageRequestDTO);
 
         log.info(responseDTO);
 
         model.addAttribute("responseDTO", responseDTO);
     }
 
-//    @GetMapping("/list")
-//    public void list(PageRequestDTO pageRequestDTO, Model model) {
-//        //PageResponseDTO<BoardDTO> responseDTO = boardService.list(pageRequestDTO);
-//        PageResponseDTO<BoardListReplyCountDTO> responseDTO =
-//                boardService.listWithReplyCount(pageRequestDTO);
-//        log.info(responseDTO);
-//        model.addAttribute("responseDTO", responseDTO);
-//    }
+    @GetMapping("/home")
+    public String home(Model model) {
 
-    @PreAuthorize("hasRole('USER')")
-    @GetMapping("/register")
-    public void registerGET() {
+        LocalDate today = LocalDate.now();
+        LocalDate yesterday = today.minusDays(1);
 
+        // ✅ 각 전략별 데이터 조회
+        List<BoardDTO> etfList = boardService.getLatestOrTodayBoard("4", today);    // ETF 거래량
+        List<BoardDTO> stockList = boardService.getLatestOrTodayBoard("3", today);  // 종목 거래량
+        List<BoardDTO> riseList = boardService.getLatestOrTodayBoard("1", today);   // 급등
+        List<BoardDTO> dropList = boardService.getLatestOrTodayBoard("2", today);   // 급락
+        List<BoardDTO> etfList_US = boardService.getLatestOrTodayBoard("44", today);    // 미국 ETF 거래량
+        List<BoardDTO> stockList_US = boardService.getLatestOrTodayBoard("43", today);  // 미국 종목 거래량
+        List<BoardDTO> riseList_US = boardService.getLatestOrTodayBoard("41", today);   // 미국 급등
+        List<BoardDTO> dropList_US = boardService.getLatestOrTodayBoard("42", today);   // 미국 급락
+
+        // ✅ 개별 fallback 처리
+        if (etfList.isEmpty()) {
+            log.info("📅 ETF 데이터 없음 → 어제 데이터로 대체");
+            etfList = boardService.getTodayBoard("4", yesterday);
+        }
+
+        if (stockList.isEmpty()) {
+            log.info("📅 종목 거래량 데이터 없음 → 어제 데이터로 대체");
+            stockList = boardService.getTodayBoard("3", yesterday);
+        }
+
+        if (riseList.isEmpty()) {
+            log.info("📅 급등 데이터 없음 → 어제 데이터로 대체");
+            riseList = boardService.getTodayBoard("1", yesterday);
+        }
+
+        if (dropList.isEmpty()) {
+            log.info("📅 급락 데이터 없음 → 어제 데이터로 대체");
+            dropList = boardService.getTodayBoard("2", yesterday);
+        }
+
+        //--------------------------------//
+        if (etfList_US.isEmpty()) {
+            log.info("📅 ETF 데이터 없음 → 어제 데이터로 대체");
+            etfList_US = boardService.getTodayBoard("44", yesterday);
+        }
+
+        if (stockList_US.isEmpty()) {
+            log.info("📅 종목 거래량 데이터 없음 → 어제 데이터로 대체");
+            stockList_US = boardService.getTodayBoard("43", yesterday);
+        }
+
+        if (riseList_US.isEmpty()) {
+            log.info("📅 급등 데이터 없음 → 어제 데이터로 대체");
+            riseList_US = boardService.getTodayBoard("41", yesterday);
+        }
+
+        if (dropList_US.isEmpty()) {
+            log.info("📅 급락 데이터 없음 → 어제 데이터로 대체");
+            dropList_US = boardService.getTodayBoard("42", yesterday);
+        }
+
+        // ✅ 모델 등록
+        model.addAttribute("etfList", etfList);
+        model.addAttribute("stockList", stockList);
+        model.addAttribute("riseList", riseList);
+        model.addAttribute("dropList", dropList);
+
+        model.addAttribute("etfList_US", etfList_US);
+        model.addAttribute("stockList_US", stockList_US);
+        model.addAttribute("riseList_US", riseList_US);
+        model.addAttribute("dropList_US", dropList_US);
+
+        log.info("🏠 Home Model Data: {}", model.asMap());
+
+        return "board/index"; // templates/board/index.html 렌더링
     }
+
+    @GetMapping("/dualMomentumList")
+    public String dualMomentumList(Model model) {
+        LocalDate today = LocalDate.now();
+        LocalDate yesterday = today.minusDays(1);
+
+        model.addAttribute("monthList", boardService.getLatestOrTodayBoard("6", today));
+        model.addAttribute("quarterList", boardService.getLatestOrTodayBoard("7", today));
+        model.addAttribute("halfList", boardService.getLatestOrTodayBoard("8", today));
+        model.addAttribute("yearList", boardService.getLatestOrTodayBoard("9", today));
+
+        model.addAttribute("monthList_US", boardService.getLatestOrTodayBoard("46", today));
+        model.addAttribute("quarterList_US", boardService.getLatestOrTodayBoard("47", today));
+        model.addAttribute("halfList_US", boardService.getLatestOrTodayBoard("48", today));
+        model.addAttribute("yearList_US", boardService.getLatestOrTodayBoard("49", today));
+
+        return "board/dualMomentum";
+    }
+
+    @GetMapping("/adminDashboard")
+    public String adminDashboard(Model model) {
+        List<BoardDTO> reports = boardService.getAdminReports().stream()
+                .peek(dto -> dto.setContent(markdownService.toHtml(dto.getContent()))) // ✅ Markdown → HTML
+                .toList();
+
+        model.addAttribute("reports", reports);
+        return "board/adminDashboard";
+    }
+
+    @GetMapping("/stockInfo")
+    public String stockInfo() {
+        return "board/stockInfo";
+    }
+
+    @GetMapping("/searchStock")
+    public String searchStock(
+            @RequestParam(required = false) String stockName,
+            @RequestParam(required = false) String stockCode,
+            Model model) {
+
+        log.info("🔍 종목 검색 요청: stockName={}, stockCode={}", stockName, stockCode);
+
+        if ((stockName == null || stockName.isBlank()) && (stockCode == null || stockCode.isBlank())) {
+            model.addAttribute("error", "종목명 또는 종목코드를 입력해주세요.");
+            return "board/stockInfo";
+        }
+
+        String keyword = (stockName != null && !stockName.isBlank()) ? stockName : stockCode;
+
+        List<SignalInfoDTO> signalList = boardService.getSignalInfoListByKeyword(keyword);
+        model.addAttribute("signalList", signalList);
+
+        StockDTO stockInfo = stockService.getStockInfo(stockName, stockCode);
+        log.info("✅ stockInfo 결과: {}", stockInfo);
+
+        if (stockInfo == null) {
+            model.addAttribute("stock", null);
+            model.addAttribute("error", "해당 종목 정보를 찾을 수 없습니다.");
+            model.addAttribute("priceList", Collections.emptyList());
+        } else {
+            model.addAttribute("stock", stockInfo);
+
+            // ✅ LocalDate → String 변환 처리
+            List<Map<String, Object>> safeList = stockInfo.getPriceList().stream()
+                    .map(p -> {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("date", p.getDate() != null ? p.getDate().toString() : null);
+                        map.put("open", p.getOpen());
+                        map.put("high", p.getHigh());
+                        map.put("low", p.getLow());
+                        map.put("close", p.getClose());
+                        map.put("volume", p.getVolume());
+                        return map;
+                    })
+                    .toList();
+
+
+            model.addAttribute("priceList", safeList);
+        }
+
+        return "board/stockInfo";
+    }
+
+
+
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @GetMapping("/register")
+    public void registerGET() { }
 
     @PostMapping("/register")
     public String registerPost(@Valid BoardDTO boardDTO, BindingResult bindingResult,
@@ -76,8 +242,7 @@ public class BoardController {
 
         if (bindingResult.hasErrors()) {
             log.info("has errors.......");
-            redirectAttributes.addFlashAttribute("errors", bindingResult.
-                    getAllErrors());
+            redirectAttributes.addFlashAttribute("errors", bindingResult.getAllErrors());
             return "redirect:/board/register";
         }
 
@@ -90,53 +255,33 @@ public class BoardController {
         return "redirect:/board/list";
     }
 
-
-//    @PostMapping("/register")
-//    public String registerPost(@Valid BoardDTO boardDTO, BindingResult bindingResult, RedirectAttributes redirectAttributes){
-//
-//        log.info("board POST register.......");
-//
-//        if(bindingResult.hasErrors()) {
-//            log.info("has errors.......");
-//            redirectAttributes.addFlashAttribute("errors", bindingResult.getAllErrors() );
-//            return "redirect:/board/register";
-//        }
-//
-//        log.info(boardDTO);
-//
-//        Long bno  = boardService.register(boardDTO);
-//
-//        redirectAttributes.addFlashAttribute("result", bno);
-//
-//        return "redirect:/board/list";
-//    }
-
-
-//    @GetMapping("/read")
-//    public void read(Long bno, PageRequestDTO pageRequestDTO, Model model){
-//
-//        BoardDTO boardDTO = boardService.readOne(bno);
-//
-//        log.info(boardDTO);
-//
-//        model.addAttribute("dto", boardDTO);
-//
-//    }
-
-
-    @PreAuthorize("isAuthenticated()")
-    @GetMapping({"/read", "/modify"})
+    // 로그인 안 해도 접근 가능 (게시글 읽기)
+    @GetMapping("/read")
     public void read(Long bno, PageRequestDTO pageRequestDTO, Model model) {
 
         BoardDTO boardDTO = boardService.readOne(bno);
 
         log.info(boardDTO);
 
-        model.addAttribute("dto", boardDTO);
+        String contentHtml = markdownService.toHtml(boardDTO.getContent());
 
+        model.addAttribute("dto", boardDTO);
+        model.addAttribute("contentHtml", contentHtml);
     }
 
-    @PreAuthorize("principal.username == #boardDTO.writer")
+    // 로그인해야 접근 가능 (게시글 수정)
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/modify")
+    public void modify(Long bno, PageRequestDTO pageRequestDTO, Model model) {
+
+        BoardDTO boardDTO = boardService.readOne(bno);
+
+        log.info(boardDTO);
+
+        model.addAttribute("dto", boardDTO);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/modify")
     public String modify(@Valid BoardDTO boardDTO,
                          BindingResult bindingResult,
@@ -167,20 +312,8 @@ public class BoardController {
     }
 
 
-//    @PostMapping("/remove")
-//    public String remove(Long bno, RedirectAttributes redirectAttributes) {
-//
-//        log.info("remove post.. " + bno);
-//
-//        boardService.remove(bno);
-//
-//        redirectAttributes.addFlashAttribute("result", "removed");
-//
-//        return "redirect:/board/list";
-//
-//    }
 
-    @PreAuthorize("principal.username == #boardDTO.writer")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/remove")
     public String remove(BoardDTO boardDTO, RedirectAttributes redirectAttributes) {
 
@@ -194,7 +327,7 @@ public class BoardController {
 
         List<String> fileNames = boardDTO.getFileNames();
 
-        if (fileNames != null && fileNames.size() > 0) {
+        if (fileNames != null && !fileNames.isEmpty()) {
             removeFiles(fileNames);
         }
 
@@ -209,17 +342,19 @@ public class BoardController {
         for (String fileName : files) {
             Resource resource = new FileSystemResource(uploadPath + File.separator + fileName);
 
-
-            String resourceName = resource.getFilename();
             try {
-                String contentType = Files.probeContentType(resource.getFile().
-                        toPath());
-                resource.getFile().delete();
+                String contentType = Files.probeContentType(resource.getFile().toPath());
+                boolean deleted = resource.getFile().delete();
+                if (!deleted) {
+                    log.warn("Failed to delete file: {}", resource.getFilename());
+                }
                 //섬네일이 존재한다면
-                if (contentType.startsWith("image")) {
-                    File thumbnailFile = new File(uploadPath + File.separator + "s_" +
-                            fileName);
-                    thumbnailFile.delete();
+                if (contentType != null && contentType.startsWith("image")) {
+                    File thumbnailFile = new File(uploadPath + File.separator + "s_" + fileName);
+                    boolean thumbDeleted = thumbnailFile.delete();
+                    if (!thumbDeleted) {
+                        log.warn("Failed to delete thumbnail: {}", thumbnailFile.getName());
+                    }
                 }
             } catch (Exception e) {
                 log.error(e.getMessage());

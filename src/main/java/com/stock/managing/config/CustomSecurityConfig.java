@@ -42,36 +42,47 @@ public class CustomSecurityConfig {
 
         log.info("------------configure-------------------");
 
-        http.formLogin(httpSecurityFormLoginConfigurer -> {
-            httpSecurityFormLoginConfigurer.loginPage("/member/login")
-                    .loginProcessingUrl("/member/login")
-                    .defaultSuccessUrl("/board/list", true)
-                    .failureUrl("/member/login?error=true");;
-        });
+        // 🔹 1. 로그인 설정
+        http.formLogin(login -> login
+                .loginPage("/member/login")
+                .loginProcessingUrl("/member/login")
+                .defaultSuccessUrl("/board/list", true)
+                .failureUrl("/member/login?error=true")
+        );
 
-        http.logout(httpSecurityLogoutConfigurer -> {
-            httpSecurityLogoutConfigurer.deleteCookies();
-        });
+        // 🔹 2. 로그아웃 설정 (에러 없이)
+        http.logout(logout -> logout
+                .logoutUrl("/logout")
+                .logoutSuccessUrl("/board/home")   // 로그아웃 후 홈으로 이동
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
+        );
 
-        http.csrf(httpSecurityCsrfConfigurer -> {
-            httpSecurityCsrfConfigurer.disable();
-        });
+        // 🔹 3. 접근 권한 설정 (모두 오픈)
+        http.authorizeHttpRequests(auth -> auth
+                .requestMatchers("/", "/board/**", "/member/**", "/css/**", "/js/**", "/assets/**", "/images/**").permitAll()
+                .anyRequest().permitAll()
+        );
 
-        http.rememberMe(httpSecurityRememberMeConfigurer -> {
-            httpSecurityRememberMeConfigurer.key("12345678")
-                    .tokenRepository(persistentTokenRepository())
-                    .userDetailsService(userDetailsService)
-                    .tokenValiditySeconds(60 * 60 * 24 * 30);
+        // 🔹 4. CSRF 해제 (테스트 / REST 호출 편의)
+        http.csrf(csrf -> csrf.disable());
 
-        });
+        // 🔹 5. Remember-Me 기능
+        http.rememberMe(rememberMe -> rememberMe
+                .key("12345678")
+                .tokenRepository(persistentTokenRepository())
+                .userDetailsService(userDetailsService)
+                .tokenValiditySeconds(60 * 60 * 24 * 30)
+        );
 
-        http.exceptionHandling(httpSecurityExceptionHandlingConfigurer -> {
-            httpSecurityExceptionHandlingConfigurer.accessDeniedHandler(accessDeniedHandler());
-        });
+        // 🔹 6. 접근 거부 핸들러
+        http.exceptionHandling(exception -> exception
+                .accessDeniedHandler(accessDeniedHandler())
+        );
 
         return http.build();
-
     }
+
 
 
     @Bean
