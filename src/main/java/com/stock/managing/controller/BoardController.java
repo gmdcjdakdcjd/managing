@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.stock.managing.dto.*;
 import com.stock.managing.service.BoardService;
+import com.stock.managing.service.IndicatorService;
 import com.stock.managing.service.StockViewService;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -46,10 +47,60 @@ public class BoardController {
     private final BoardService boardService;
     private final MarkdownService markdownService; // added
     private final StockViewService stockService;
+    private final IndicatorService indicatorService;
 
 
     @Value("${com.stock.upload.path}")
     private String uploadPath;
+
+    @GetMapping("/index")
+    public String index(Model model) {
+
+        var kospiList = indicatorService.getIndicator("KOSPI");
+        var spxList = indicatorService.getIndicator("SPX");
+        var usdList = indicatorService.getIndicator("USD");
+        var jpyList = indicatorService.getIndicator("USDJPY");
+        var goldKrList = indicatorService.getIndicator("GOLD_KR");
+        var goldGlobalList = indicatorService.getIndicator("GOLD_GLOBAL");
+        var wtiList = indicatorService.getIndicator("WTI");
+        var dubaiList = indicatorService.getIndicator("DUBAI");
+
+        log.info("KOSPI   → {}", kospiList);
+        log.info("SPX     → {}", spxList);
+        log.info("USD     → {}", usdList);
+        log.info("JPY     → {}", jpyList);
+        log.info("GOLD_KR → {}", goldKrList);
+        log.info("GOLD_GL → {}", goldGlobalList);
+        log.info("WTI     → {}", wtiList);
+        log.info("DUBAI   → {}", dubaiList);
+
+        model.addAttribute("kospiList", convert(kospiList));
+        model.addAttribute("spxList", convert(spxList));
+        model.addAttribute("usdList", convert(usdList));
+        model.addAttribute("jpyList", convert(jpyList));
+        model.addAttribute("goldKrList", convert(goldKrList));
+        model.addAttribute("goldGlobalList", convert(goldGlobalList));
+        model.addAttribute("wtiList", convert(wtiList));
+        model.addAttribute("dubaiList", convert(dubaiList));
+
+        convert(kospiList).forEach(m -> log.info("Converted → date={}, close={}", m.get("date"), m.get("close")));
+
+
+        return "board/index";
+    }
+
+
+    private List<Map<String, Object>> convert(List<MarketIndicatorDTO> list) {
+        return list.stream()
+                .map(dto -> {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("date", dto.getDate().toString());
+                    m.put("close", dto.getClose());
+                    return m;
+                })
+                .toList();
+    }
+
 
     // 한국 주식
     @GetMapping("/list")
@@ -72,8 +123,8 @@ public class BoardController {
         model.addAttribute("responseDTO", responseDTO);
     }
 
-    @GetMapping("/home")
-    public String home(Model model) {
+    @GetMapping("/issue")
+    public String issue(Model model) {
 
         LocalDate today = LocalDate.now();
         LocalDate yesterday = today.minusDays(1);
@@ -143,7 +194,7 @@ public class BoardController {
 
         log.info("🏠 Home Model Data: {}", model.asMap());
 
-        return "board/index"; // templates/board/index.html 렌더링
+        return "board/issue"; // templates/board/issue.html 렌더링
     }
 
     @GetMapping("/dualMomentumList")

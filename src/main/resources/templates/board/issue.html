@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/basic.html}">
+<head>
+    <meta charset="UTF-8">
+    <title>오늘의 종목 요약</title>
+
+    <!-- ✅ Markdown 렌더링 스타일 -->
+    <link rel="stylesheet" th:href="@{/css/markdown.css}">
+
+    <style>
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 1rem;
+        }
+        .dashboard-card {
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            padding: 1.2rem;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .dashboard-card h5 {
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        /* ✅ 수정된 부분 */
+        .content-box {
+            max-height: 400px;     /* 한 카드에서 보여줄 최대 높이 */
+            overflow-y: auto;      /* 내부 내용만 스크롤 */
+            font-size: 0.9rem;
+            line-height: 1.5;
+            padding-right: 0.5rem;
+            scrollbar-width: thin; /* (선택) 스크롤 얇게 */
+        }
+
+        .dashboard-wide {
+            grid-column: span 2;
+            max-height: none;
+        }
+
+        .dashboard-wide .content-box {
+            max-height: 600px; /* 좀 더 긴 리스트도 스크롤 가능 */
+        }
+
+    </style>
+</head>
+
+<body>
+<div layout:fragment="content" class="container mt-4">
+    <h3 class="fw-bold mb-4">📊 오늘의 전략별 결과 요약</h3>
+
+    <div class="dashboard-grid">
+
+        <!-- ✅ ETF 거래량 -->
+        <div class="dashboard-card dashboard-wide">
+            <h5 class="text-primary">📈 ETF 거래량 전략</h5>
+            <div class="content-box">
+                <div th:each="dto : ${etfList}">
+                    <div class="markdown-body" th:utext="${dto.content}"></div>
+                    <hr/>
+                </div>
+            </div>
+        </div>
+
+        <!-- ✅ 종목 거래량 -->
+        <div class="dashboard-card dashboard-wide">
+            <h5 class="text-success">💹 종목 거래량 전략</h5>
+            <div class="content-box">
+                <div th:each="dto : ${stockList}">
+                    <div class="markdown-body" th:utext="${dto.content}"></div>
+                    <hr/>
+                </div>
+            </div>
+        </div>
+
+        <!-- ✅ 급등 -->
+        <div class="dashboard-card dashboard-wide">
+            <h5 class="text-danger">🚀 급등 전략</h5>
+            <div class="content-box">
+                <div th:each="dto : ${riseList}">
+                    <div class="markdown-body" th:utext="${dto.content}"></div>
+                    <hr/>
+                </div>
+            </div>
+        </div>
+
+        <!-- ✅ 급락 -->
+        <div class="dashboard-card dashboard-wide">
+            <h5 class="text-secondary">💣 급락 전략</h5>
+            <div class="content-box">
+                <div th:each="dto : ${dropList}">
+                    <div class="markdown-body" th:utext="${dto.content}"></div>
+                    <hr/>
+                </div>
+            </div>
+        </div>
+
+<!--미국 종목 시작-->
+
+        <div class="dashboard-card dashboard-wide">
+            <h5 class="text-primary">📈 미국 ETF 거래량 전략</h5>
+            <div class="content-box">
+                <div th:each="dto : ${etfList_US}">
+                    <div class="markdown-body" th:utext="${dto.content}"></div>
+                    <hr/>
+                </div>
+            </div>
+        </div>
+
+        <!-- ✅ 종목 거래량 -->
+        <div class="dashboard-card dashboard-wide">
+            <h5 class="text-success">💹 미국 종목 거래량 전략</h5>
+            <div class="content-box">
+                <div th:each="dto : ${stockList_US}">
+                    <div class="markdown-body" th:utext="${dto.content}"></div>
+                    <hr/>
+                </div>
+            </div>
+        </div>
+
+        <!-- ✅ 급등 -->
+        <div class="dashboard-card dashboard-wide">
+            <h5 class="text-danger">🚀 미국  급등 전략</h5>
+            <div class="content-box">
+                <div th:each="dto : ${riseList_US}">
+                    <div class="markdown-body" th:utext="${dto.content}"></div>
+                    <hr/>
+                </div>
+            </div>
+        </div>
+
+        <!-- ✅ 급락 -->
+        <div class="dashboard-card dashboard-wide">
+            <h5 class="text-secondary">💣  미국 급락 전략</h5>
+            <div class="content-box">
+                <div th:each="dto : ${dropList_US}">
+                    <div class="markdown-body" th:utext="${dto.content}"></div>
+                    <hr/>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+</body>
+</html>
