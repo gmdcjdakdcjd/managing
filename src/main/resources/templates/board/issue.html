@@ -4,48 +4,64 @@
       layout:decorate="~{layout/basic.html}">
 <head>
     <meta charset="UTF-8">
-    <title>오늘의 종목 요약</title>
-
-    <!-- ✅ Markdown 렌더링 스타일 -->
-    <link rel="stylesheet" th:href="@{/css/markdown.css}">
+    <title>오늘의 전략별 결과 요약</title>
 
     <style>
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            grid-template-rows: 1fr 1fr;
-            gap: 1rem;
-        }
         .dashboard-card {
             border: 1px solid #ccc;
             border-radius: 10px;
             padding: 1.2rem;
             background: #fff;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
         }
-        .dashboard-card h5 {
-            font-weight: bold;
-            margin-bottom: 1rem;
-        }
-        /* ✅ 수정된 부분 */
         .content-box {
-            max-height: 400px;     /* 한 카드에서 보여줄 최대 높이 */
-            overflow-y: auto;      /* 내부 내용만 스크롤 */
-            font-size: 0.9rem;
-            line-height: 1.5;
+            max-height: 400px;
+            overflow-y: auto;
             padding-right: 0.5rem;
-            scrollbar-width: thin; /* (선택) 스크롤 얇게 */
+        }
+        table {
+            width: 100%;
+            font-size: 0.9rem;
+        }
+        th {
+            font-weight: bold;
+            border-bottom: 1px solid #ddd;
+            padding: 6px;
+        }
+        td {
+            padding: 6px;
+            border-bottom: 1px solid #f1f1f1;
         }
 
-        .dashboard-wide {
-            grid-column: span 2;
-            max-height: none;
+        .col-code {
+            width: auto;
         }
-
-        .dashboard-wide .content-box {
-            max-height: 600px; /* 좀 더 긴 리스트도 스크롤 가능 */
+        .col-price {
+            width: 150px;
+            text-align: right;
+            white-space: nowrap;
         }
-
+        .col-prev {
+            width: 150px;
+            text-align: right;
+            white-space: nowrap;
+        }
+        .col-diff {
+            width: 150px;
+            text-align: right;
+            white-space: nowrap;
+        }
+        .col-volume {
+            width: 150px;
+            text-align: right;
+            white-space: nowrap;
+        }
+        .col-date {
+            width: 150px;
+            text-align: center;
+            white-space: nowrap;
+        }
     </style>
 </head>
 
@@ -53,98 +69,91 @@
 <div layout:fragment="content" class="container mt-4">
     <h3 class="fw-bold mb-4">📊 오늘의 전략별 결과 요약</h3>
 
-    <div class="dashboard-grid">
+    <!-- ============================= -->
+    <!-- 🇰🇷 한국 전략 섹션 -->
+    <!-- ============================= -->
+    <h4 class="fw-bold mt-5">🇰🇷 한국 전략</h4>
 
-        <!-- ✅ ETF 거래량 -->
-        <div class="dashboard-card dashboard-wide">
-            <h5 class="text-primary">📈 ETF 거래량 전략</h5>
-            <div class="content-box">
-                <div th:each="dto : ${etfList}">
-                    <div class="markdown-body" th:utext="${dto.content}"></div>
-                    <hr/>
-                </div>
-            </div>
+    <div th:each="entry : ${strategyMap}"
+         th:if="${entry.key.endsWith('_KR')}"
+         class="dashboard-card">
+
+        <h5 th:text="${entry.key}" class="text-primary"></h5>
+
+        <div class="content-box">
+            <table>
+                <thead>
+                <tr>
+                    <th class="col-code">종목</th>
+                    <th class="col-price">가격</th>
+                    <th class="col-prev">전일</th>
+                    <th class="col-diff">변동</th>
+                    <th class="col-volume">거래량</th>
+                    <th class="col-date">날짜</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="dto : ${entry.value}">
+                    <td class="col-code">
+                        <span th:text="${dto.code}"></span>
+                        &nbsp;
+                        <span th:text="${dto.name}"></span>
+                    </td>
+                    <td class="col-price"   th:text="${dto.price + '원'}"></td>
+                    <td class="col-prev"    th:text="${dto.prevClose + '원'}"></td>
+                    <td class="col-diff"    th:text="${dto.diff + '%'}"></td>
+                    <td class="col-volume"  th:text="${dto.volume}"></td>
+                    <td class="col-date"    th:text="${dto.signalDate}"></td>
+                </tr>
+                </tbody>
+            </table>
         </div>
-
-        <!-- ✅ 종목 거래량 -->
-        <div class="dashboard-card dashboard-wide">
-            <h5 class="text-success">💹 종목 거래량 전략</h5>
-            <div class="content-box">
-                <div th:each="dto : ${stockList}">
-                    <div class="markdown-body" th:utext="${dto.content}"></div>
-                    <hr/>
-                </div>
-            </div>
-        </div>
-
-        <!-- ✅ 급등 -->
-        <div class="dashboard-card dashboard-wide">
-            <h5 class="text-danger">🚀 급등 전략</h5>
-            <div class="content-box">
-                <div th:each="dto : ${riseList}">
-                    <div class="markdown-body" th:utext="${dto.content}"></div>
-                    <hr/>
-                </div>
-            </div>
-        </div>
-
-        <!-- ✅ 급락 -->
-        <div class="dashboard-card dashboard-wide">
-            <h5 class="text-secondary">💣 급락 전략</h5>
-            <div class="content-box">
-                <div th:each="dto : ${dropList}">
-                    <div class="markdown-body" th:utext="${dto.content}"></div>
-                    <hr/>
-                </div>
-            </div>
-        </div>
-
-<!--미국 종목 시작-->
-
-        <div class="dashboard-card dashboard-wide">
-            <h5 class="text-primary">📈 미국 ETF 거래량 전략</h5>
-            <div class="content-box">
-                <div th:each="dto : ${etfList_US}">
-                    <div class="markdown-body" th:utext="${dto.content}"></div>
-                    <hr/>
-                </div>
-            </div>
-        </div>
-
-        <!-- ✅ 종목 거래량 -->
-        <div class="dashboard-card dashboard-wide">
-            <h5 class="text-success">💹 미국 종목 거래량 전략</h5>
-            <div class="content-box">
-                <div th:each="dto : ${stockList_US}">
-                    <div class="markdown-body" th:utext="${dto.content}"></div>
-                    <hr/>
-                </div>
-            </div>
-        </div>
-
-        <!-- ✅ 급등 -->
-        <div class="dashboard-card dashboard-wide">
-            <h5 class="text-danger">🚀 미국  급등 전략</h5>
-            <div class="content-box">
-                <div th:each="dto : ${riseList_US}">
-                    <div class="markdown-body" th:utext="${dto.content}"></div>
-                    <hr/>
-                </div>
-            </div>
-        </div>
-
-        <!-- ✅ 급락 -->
-        <div class="dashboard-card dashboard-wide">
-            <h5 class="text-secondary">💣  미국 급락 전략</h5>
-            <div class="content-box">
-                <div th:each="dto : ${dropList_US}">
-                    <div class="markdown-body" th:utext="${dto.content}"></div>
-                    <hr/>
-                </div>
-            </div>
-        </div>
-
     </div>
+
+    <!-- ============================= -->
+    <!-- 🇺🇸 미국 전략 섹션 -->
+    <!-- ============================= -->
+    <h4 class="fw-bold mt-5">🇺🇸 미국 전략</h4>
+
+    <div th:each="entry : ${strategyMap}"
+         th:if="${entry.key.endsWith('_US')}"
+         class="dashboard-card">
+
+        <h5 th:text="${entry.key}" class="text-primary"></h5>
+
+        <div class="content-box">
+            <table>
+                <thead>
+                <tr>
+                    <th class="col-code">종목</th>
+                    <th class="col-price">가격</th>
+                    <th class="col-prev">전일</th>
+                    <th class="col-diff">변동</th>
+                    <th class="col-volume">거래량</th>
+                    <th class="col-date">날짜</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="dto : ${entry.value}">
+                    <td class="col-code">
+                        <span th:text="${dto.code}"></span>
+                        &nbsp;
+                        <span th:text="${dto.name}"></span>
+                    </td>
+                    <td class="col-price"   th:text="${dto.price + '$'}"></td>
+                    <td class="col-prev"    th:text="${dto.prevClose + '$'}"></td>
+                    <td class="col-diff"    th:text="${dto.diff + '%'}"></td>
+                    <td class="col-volume"  th:text="${dto.volume}"></td>
+                    <td class="col-date"    th:text="${dto.signalDate}"></td>
+                </tr>
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+
 </div>
 </body>
 </html>

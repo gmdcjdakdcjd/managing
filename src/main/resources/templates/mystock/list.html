@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/basic.html}">
+
+<head>
+    <meta charset="UTF-8">
+    <title>내 종목</title>
+
+    <style>
+        .card-box {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 1.2rem;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        table th, table td {
+            vertical-align: middle;
+            font-size: 0.92rem;
+        }
+    </style>
+</head>
+
+<body>
+
+<div layout:fragment="content" class="container mt-4" style="max-width:1400px;">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="fw-bold">⭐ 내 관심 종목</h3>
+
+        <button class="btn btn-outline-secondary btn-sm"
+                onclick="openHistoryModal()">
+            🕑 삭제된 종목 보기
+        </button>
+    </div>
+
+    <!-- 🇰🇷 한국 관심 종목 -->
+    <div th:if="${#lists.size(krList) > 0}">
+        <h4 class="fw-bold mt-4">🇰🇷 한국 관심 종목</h4>
+
+        <div class="card card-box mb-5">
+            <table class="table table-hover text-center table-sm">
+                <thead class="table-light">
+                <tr>
+                    <th>No</th>
+                    <th>종목코드</th>
+                    <th>종목명</th>
+                    <th>현재가</th>
+                    <th>추가 당시 가격</th>
+                    <th>+5%</th>
+                    <th>+10%</th>
+                    <th>포착 전략</th>
+                    <th>포착값</th>
+                    <th>등록일</th>
+                    <th>삭제</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="s, idx : ${krList}">
+                    <td th:text="${idx.index + 1}"></td>
+                    <td th:text="${s.code}"></td>
+                    <td th:text="${s.name}"></td>
+
+                    <!-- 현재가 -->
+                    <td th:text="${#numbers.formatInteger(s.currentPrice, 1, 'COMMA') + ' 원'}"></td>
+
+                    <td th:text="${#numbers.formatInteger(s.priceAtAdd, 1, 'COMMA') + ' 원'}"></td>
+                    <td th:text="${#numbers.formatInteger(s.targetPrice5, 1, 'COMMA') + ' 원'}"></td>
+                    <td th:text="${#numbers.formatInteger(s.targetPrice10, 1, 'COMMA') + ' 원'}"></td>
+
+                    <td>
+                        <span th:text="${s.strategyName}"></span>
+                        <a th:href="@{'/board/detailKR'(strategy=${s.strategyName}, date=${s.memo})}">
+                            🔍
+                        </a>
+                    </td>
+
+                    <td th:text="${s.specialValue}"></td>
+                    <td th:text="${#temporals.format(s.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+
+                    <td>
+                        <button class="btn btn-sm btn-outline-danger"
+                                th:onclick="'deleteMyStock(' + ${s.id} + ')'">
+                            삭제
+                        </button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 🇺🇸 미국 관심 종목 -->
+    <div th:if="${#lists.size(usList) > 0}">
+        <h4 class="fw-bold mt-4">🇺🇸 미국 관심 종목</h4>
+
+        <div class="card card-box mb-5">
+            <table class="table table-hover text-center table-sm">
+                <thead class="table-light">
+                <tr>
+                    <th>No</th>
+                    <th>종목코드</th>
+                    <th>종목명</th>
+                    <th>현재가</th>
+                    <th>추가 당시 가격</th>
+                    <th>+5%</th>
+                    <th>+10%</th>
+                    <th>포착 전략</th>
+                    <th>포착값</th>
+                    <th>등록일</th>
+                    <th>삭제</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="s, idx : ${usList}">
+                    <td th:text="${idx.index + 1}"></td>
+                    <td th:text="${s.code}"></td>
+                    <td th:text="${s.name}"></td>
+
+                    <!-- 현재가 -->
+                    <td th:text="${#numbers.formatDecimal(s.currentPrice, 1, 'COMMA', 2, 'POINT') + ' $'}"></td>
+
+                    <td th:text="${s.priceAtAdd}"></td>
+                    <td th:text="${s.targetPrice5}"></td>
+                    <td th:text="${s.targetPrice10}"></td>
+
+                    <td>
+                        <span th:text="${s.strategyName}"></span>
+                        <a th:href="@{'/board/detailUS'(strategy=${s.strategyName}, date=${s.memo})}">
+                            🔍
+                        </a>
+                    </td>
+
+                    <td th:text="${s.specialValue}"></td>
+                    <td th:text="${#temporals.format(s.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+
+                    <td>
+                        <button class="btn btn-sm btn-outline-danger"
+                                th:onclick="'deleteMyStock(' + ${s.id} + ')'">
+                            삭제
+                        </button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 삭제 모달 -->
+    <div class="modal fade" id="historyModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">🕑 삭제된 관심 종목</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <table class="table table-sm table-hover text-center">
+                        <thead class="table-light">
+                        <tr>
+                            <th>No</th>
+                            <th>종목코드</th>
+                            <th>종목명</th>
+                            <th>삭제일</th>
+                            <th>복구</th>
+                        </tr>
+                        </thead>
+                        <tbody id="deletedListBody"></tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="script">
+    <script th:inline="javascript">
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+            window.deleteMyStock = function (id) {
+                if (!confirm("삭제하시겠습니까?")) return;
+
+                fetch("/mystock/delete/" + id, {method: "POST"})
+                    .then(res => res.json())
+                    .then(() => {
+                        alert("삭제되었습니다");
+                        location.reload();
+                    });
+            }
+
+            window.openHistoryModal = function () {
+                fetch("/mystock/deleted")
+                    .then(res => res.json())
+                    .then(list => {
+
+                        const tbody = document.getElementById("deletedListBody");
+                        tbody.innerHTML = "";
+
+                        list.forEach((s, idx) => {
+                            tbody.innerHTML += `
+                            <tr>
+                                <td>${idx + 1}</td>
+                                <td>${s.code}</td>
+                                <td>${s.name}</td>
+                                <td>${s.deletedAt.replace("T", " ")}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary"
+                                        onclick="restoreMyStock(${s.id})">
+                                        복구
+                                    </button>
+                                </td>
+                            </tr>`;
+                        });
+
+                        new bootstrap.Modal(document.getElementById("historyModal")).show();
+                    });
+            }
+
+            window.restoreMyStock = function (id) {
+                if (!confirm("복구하시겠습니까?")) return;
+
+                fetch("/mystock/restore/" + id, {method: "POST"})
+                    .then(res => res.json())
+                    .then(() => {
+                        alert("복구되었습니다!");
+
+                        let modal = bootstrap.Modal.getInstance(document.getElementById("historyModal"));
+                        modal.hide();
+                        setTimeout(() => location.reload(), 200);
+                    });
+            }
+        });
+
+    </script>
+</th:block>
+
+</body>
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout/basic.html}">
+
+<head>
+    <meta charset="UTF-8">
+    <title>전략 상세보기</title>
+
+    <style>
+        .card-box {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 1.2rem;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        table th, table td {
+            vertical-align: middle;
+            font-size: 0.92rem;
+        }
+
+        .header-info {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+<div layout:fragment="content" class="container mt-4" style="max-width:1400px;">
+
+    <h3 class="fw-bold mb-4">📌 전략 상세 조회</h3>
+
+    <!-- ======================= -->
+    <!-- 📌 상단 전략 정보 -->
+    <!-- ======================= -->
+    <div class="card-box mb-4">
+
+        <div class="header-info">
+            <span class="fw-semibold">전략명: </span>
+            <span th:text="${strategy}"></span>
+        </div>
+
+        <div class="header-info">
+            <span class="fw-semibold">포착일: </span>
+            <span th:text="${date}"></span>
+        </div>
+
+        <button onclick="history.back()" class="btn btn-outline-secondary btn-sm mt-2">← 목록으로</button>
+    </div>
+
+
+    <!-- ======================= -->
+    <!-- 📌 로그인 시 버튼 -->
+    <!-- ======================= -->
+    <div sec:authorize="isAuthenticated()" class="mb-3 d-flex align-items-center gap-3">
+
+        <a href="/mystock/list" class="btn btn-primary btn-sm">
+            ⭐ 내 종목 보러가기
+        </a>
+
+        <button id="addMyStockBtn" class="btn btn-success btn-sm">
+            📌 선택 종목 추가
+        </button>
+
+    </div>
+
+
+    <!-- ======================= -->
+    <!-- 📌 상세 테이블 -->
+    <!-- ======================= -->
+    <div class="card">
+        <div class="card-header fw-semibold">포착 종목 목록</div>
+
+        <div class="card-body">
+
+            <table class="table table-sm table-hover text-center">
+
+                <thead class="table-light">
+                <tr>
+                    <th style="width:60px;">
+                        <span sec:authorize="isAuthenticated()">
+                            <input type="checkbox" id="selectAll" class="form-check-input"/>
+                        </span>
+                    </th>
+
+                    <th>종목코드</th>
+                    <th>종목명</th>
+                    <th>현재가</th>
+                    <th th:text="${priceLabel}">전일종가</th>
+                    <th>등락률</th>
+                    <th>거래량</th>
+                    <th th:text="${captureName}">포착값</th>
+                    <th>포착시간</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="dto : ${detailList}">
+                    <td>
+                        <span sec:authorize="isAuthenticated()">
+                            <input type="checkbox"
+                                   class="stock-check"
+                                   th:value="${dto.code}"
+                                   th:data-name="${dto.name}"
+                                   th:data-price="${dto.price}"
+                                   th:data-strategy="${strategy}"
+                                   th:data-special="${dto.specialValue}"
+                                   th:data-date="${dto.signalDate}" />
+                        </span>
+                    </td>
+
+                    <td th:text="${dto.code}"></td>
+                    <td th:text="${dto.name}"></td>
+
+                    <td th:text="${#numbers.formatInteger(dto.price, 1, 'COMMA') + ' 원'}"></td>
+                    <td th:text="${#numbers.formatInteger(dto.prevClose, 1, 'COMMA') + ' 원'}"></td>
+
+                    <td th:text="${dto.diff + '%'}"
+                        th:style="${dto.diff >= 0} ? 'color:red;' : 'color:blue;'"></td>
+
+                    <td th:text="${#numbers.formatInteger(dto.volume, 1, 'COMMA')}"></td>
+
+                    <td th:text="${dto.specialValue}"></td>
+                    <td th:text="${dto.createdAt}"></td>
+                </tr>
+                </tbody>
+
+            </table>
+
+        </div>
+    </div>
+
+</div> <!-- container end -->
+
+
+<!-- ======================= -->
+<!-- 📌 Script (fragment) -->
+<!-- ======================= -->
+<th:block layout:fragment="script">
+    <script th:inline="javascript">
+
+        // 📌 포착일(date)을 JS 변수로 가져오기
+        const captureDate = /*[[${date}]]*/ "";
+
+        document.addEventListener("DOMContentLoaded", () => {
+
+            const selectAll = document.getElementById("selectAll");
+            if (selectAll) {
+                selectAll.addEventListener("change", () => {
+                    const checked = selectAll.checked;
+                    document.querySelectorAll(".stock-check").forEach(chk => {
+                        chk.checked = checked;
+                    });
+                });
+            }
+
+            // 📌 선택 종목 추가
+            const btn = document.getElementById("addMyStockBtn");
+            if (btn) {
+                btn.addEventListener("click", () => {
+                    const checked = document.querySelectorAll(".stock-check:checked");
+
+                    if (checked.length === 0) {
+                        alert("선택된 종목이 없습니다.");
+                        return;
+                    }
+
+                    const list = [];
+                    checked.forEach(c => {
+                        list.push({
+                            code: c.value,
+                            name: c.dataset.name,
+                            strategyName: c.dataset.strategy,
+                            specialValue: c.dataset.special,
+                            priceAtAdd: c.dataset.price,
+                            memo: c.dataset.date   // ← 포착일 그대로 저장
+                        });
+                    });
+
+                    fetch("/mystock/add", {
+                        method: "POST",
+                        headers: {"Content-Type": "application/json"},
+                        body: JSON.stringify(list)
+                    })
+                        .then(res => res.json())
+                        .then(() => alert("내 종목에 성공적으로 추가되었습니다!"))
+                        .catch(err => console.error(err));
+                });
+            }
+
+        });
+
+    </script>
+</th:block>
+</body>
+</html>

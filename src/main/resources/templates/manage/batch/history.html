@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/basic.html}">
+
+<head>
+    <meta charset="UTF-8">
+    <title>배치 실행 이력</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+
+
+<body>
+
+<div layout:fragment="content" class="container mt-4" style="max-width:1200px;">
+
+    <h3 class="fw-bold mb-4">🧩 배치 실행 이력</h3>
+
+    <div class="card">
+        <div class="card-header fw-semibold">전체 배치 내역</div>
+
+        <div class="card-body">
+
+            <table class="table table-hover text-center align-middle">
+                <thead class="table-light">
+                <tr>
+                    <th>날짜</th>
+                    <th>건수(IN+OUT)</th>
+                    <th>상세보기</th>
+                </tr>
+                </thead>
+
+                <tbody>
+
+                <!-- 🔥 날짜 + 상세 를 하나의 반복으로 묶음 -->
+                <th:block th:each="g : ${groups}">
+
+                    <!-- 📌 날짜 row -->
+                    <tr>
+                        <td th:text="${g.date}"></td>
+                        <td th:text="${#lists.size(g.items)} + '건'"></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary fw-semibold"
+                                    th:attr="data-id=${g.dateKey}"
+                                    onclick="toggleDetail(this)">
+                                보기 ▼
+                            </button>
+                        </td>
+                    </tr>
+
+                    <!-- 📌 상세 row (해당 날짜 바로 아래) -->
+                    <tr th:id="|detail-${g.dateKey}|" class="detail-row" style="display:none;">
+                        <td colspan="3">
+
+                            <div class="p-3 border rounded bg-light">
+
+                                <h5 class="fw-bold mb-3">상세 실행 내역</h5>
+
+                                <table class="table table-sm table-bordered text-center mb-0">
+                                    <thead class="table-secondary">
+                                    <tr>
+                                        <th>유형</th>
+                                        <th>Job명</th>
+                                        <th>시작</th>
+                                        <th>종료</th>
+                                        <th>Status</th>
+                                        <th>Duration(ms)</th>
+                                    </tr>
+                                    </thead>
+
+                                    <tbody>
+                                    <tr th:each="item : ${g.items}">
+                                        <td th:text="${item.type}"></td>
+                                        <td th:text="${item.jobName}"></td>
+
+                                        <td th:text="${#temporals.format(item.execStartTime,'yyyy-MM-dd HH:mm:ss')}"></td>
+                                        <td th:text="${#temporals.format(item.execEndTime,'yyyy-MM-dd HH:mm:ss')}"></td>
+
+                                        <td th:text="${item.execStatus}"
+                                            th:classappend="${item.execStatus == 'SUCCESS'}
+                                                            ? 'text-success fw-bold'
+                                                            : 'text-danger fw-bold'">
+                                        </td>
+
+                                        <td th:text="${item.durationMs}"></td>
+                                    </tr>
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                        </td>
+                    </tr>
+
+                </th:block>
+
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+
+</div>
+
+
+<!-- ============================ -->
+<!-- Toggle Script -->
+<!-- ============================ -->
+<th:block layout:fragment="script">
+    <script th:inline="javascript">
+
+        function toggleDetail(btn) {
+
+            const id = btn.getAttribute("data-id");
+            const row = document.getElementById("detail-" + id);
+
+            const hidden = row.style.display === "none" || row.style.display === "";
+
+            if (hidden) {
+                row.style.display = "table-row";
+                btn.textContent = "닫기 ▲";
+            } else {
+                row.style.display = "none";
+                btn.textContent = "보기 ▼";
+            }
+        }
+
+    </script>
+</th:block>
+
+</body>
+</html>

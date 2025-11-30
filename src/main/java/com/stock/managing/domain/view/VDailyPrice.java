@@ -8,7 +8,7 @@ import lombok.Setter;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "v_daily_price")
+@Table(name = "daily_price_us")
 @Getter @Setter
 @Immutable
 @IdClass(VDailyPriceId.class)

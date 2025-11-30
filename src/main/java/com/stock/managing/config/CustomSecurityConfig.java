@@ -46,21 +46,21 @@ public class CustomSecurityConfig {
         http.formLogin(login -> login
                 .loginPage("/member/login")
                 .loginProcessingUrl("/member/login")
-                .defaultSuccessUrl("/board/list", true)
+                .defaultSuccessUrl("/", false)
                 .failureUrl("/member/login?error=true")
         );
 
         // 🔹 2. 로그아웃 설정 (에러 없이)
         http.logout(logout -> logout
-                .logoutUrl("/logout")
-                .logoutSuccessUrl("/board/home")   // 로그아웃 후 홈으로 이동
+                .logoutUrl("/logout")// ★ 여기만 교체
+                .logoutSuccessUrl("/")   // ★ 로그아웃 성공 시 / 로 이동
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID")
         );
 
         // 🔹 3. 접근 권한 설정 (모두 오픈)
         http.authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/board/**", "/member/**", "/css/**", "/js/**", "/assets/**", "/images/**").permitAll()
+                .requestMatchers("/", "/board/**", "/mystock/**", "/member/**", "/css/**", "/js/**", "/assets/**", "/images/**").permitAll()
                 .anyRequest().permitAll()
         );
 

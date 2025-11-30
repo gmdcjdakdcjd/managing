@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/basic.html}">
+
+<head>
+  <meta charset="UTF-8">
+  <title>전략 결과 목록 (US)</title>
+  <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+
+<body>
+<div layout:fragment="content" class="container mt-4" style="max-width:1400px;">
+
+  <h3 class="fw-bold mb-4">📈 미국 전략 결과 목록</h3>
+
+  <form id="filterForm" action="/board/listUS" method="get" class="mb-3">
+
+    <div class="d-flex flex-wrap align-items-center justify-content-between">
+
+      <!-- 왼쪽 : 전략명 + 날짜 -->
+      <div class="d-flex gap-3 flex-wrap">
+
+        <!-- 📌 전략명 -->
+        <div class="input-group" style="width: 300px;">
+          <span class="input-group-text bg-primary text-white">전략명</span>
+          <select name="strategy" class="form-select">
+            <option value="">전체</option>
+            <option th:each="s : ${strategyList}"
+                    th:value="${s}"
+                    th:text="${s}"
+                    th:selected="${strategy == s}">
+            </option>
+          </select>
+        </div>
+
+        <!-- 📅 날짜 -->
+        <div class="input-group" style="width: 220px;">
+          <span class="input-group-text bg-secondary text-white">날짜</span>
+          <input type="date" class="form-control" name="regDate" th:value="${regDate}">
+        </div>
+
+      </div>
+
+      <!-- 🔍 오른쪽 : 검색 / 초기화 -->
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-success px-3 fw-semibold">
+          검색
+        </button>
+
+        <a href="/board/listUS" class="btn btn-outline-danger px-3 fw-semibold">
+          초기화
+        </a>
+      </div>
+
+    </div>
+
+    <!-- 페이징 유지 -->
+    <input type="hidden" name="page" th:value="${pageRequestDTO.page}">
+    <input type="hidden" name="size" th:value="${pageRequestDTO.size}">
+  </form>
+
+  <!-- ================================ -->
+  <!-- 📌 페이지 이동용 form -->
+  <!-- ================================ -->
+  <form id="pageForm" action="/board/listUS" method="get">
+    <input type="hidden" name="page" th:value="${pageRequestDTO.page}">
+    <input type="hidden" name="size" th:value="${pageRequestDTO.size}">
+    <!-- 검색값 유지 (옵션) -->
+    <input type="hidden" name="type" th:value="${pageRequestDTO.type}">
+    <input type="hidden" name="keyword" th:value="${pageRequestDTO.keyword}">
+    <input type="hidden" name="regDate" th:value="${pageRequestDTO.regDate}">
+  </form>
+
+  <!-- ================================ -->
+  <!-- 📌 전략 결과 테이블 -->
+  <!-- ================================ -->
+  <div class="card">
+    <div class="card-header fw-semibold">전략 결과</div>
+
+    <div class="card-body">
+
+      <table class="table table-hover text-center">
+        <thead class="table-light">
+        <tr>
+          <th>전략명</th>
+          <th>포착일</th>
+          <th>포착 데이터 수</th>
+          <th>생성일</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr th:each="dto : ${responseDTO.dtoList}"
+            class="result-row"
+            th:data-strategy="${dto.strategyName}"
+            th:data-date="${dto.signalDate}"
+            style="cursor:pointer;">
+
+          <td th:text="${dto.strategyName}"></td>
+          <td th:text="${dto.signalDate}"></td>
+          <td th:text="${dto.totalData}"></td>
+          <td th:text="${dto.createdAt}"></td>
+
+        </tr>
+        </tbody>
+
+      </table>
+
+      <!-- ================================ -->
+      <!-- 📌 Pagination -->
+      <!-- ================================ -->
+      <div class="text-center mt-3">
+        <ul class="pagination justify-content-center flex-wrap">
+
+          <li class="page-item" th:if="${responseDTO.prev}">
+            <a class="page-link"
+               th:data-num="${responseDTO.start - 1}">Previous</a>
+          </li>
+
+          <th:block th:each="i : ${#numbers.sequence(responseDTO.start, responseDTO.end)}">
+            <li th:class="${responseDTO.page == i} ? 'page-item active' : 'page-item'">
+              <a class="page-link" th:data-num="${i}">[[${i}]]</a>
+            </li>
+          </th:block>
+
+          <li class="page-item" th:if="${responseDTO.next}">
+            <a class="page-link"
+               th:data-num="${responseDTO.end + 1}">Next</a>
+          </li>
+
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ================================ -->
+<!-- 📌 Script -->
+<!-- ================================ -->
+<script layout:fragment="script" th:inline="javascript">
+
+  /* 행 클릭 → 상세 */
+  document.querySelectorAll(".result-row").forEach(row => {
+    row.addEventListener("click", function () {
+      const strategy = this.dataset.strategy;
+      const date = this.dataset.date;
+      window.location.href = `/board/detailUS?strategy=${strategy}&date=${date}`;
+    });
+  });
+
+  /* 페이지 이동 */
+  const pagination = document.querySelector(".pagination");
+  const pageForm = document.getElementById("pageForm");
+
+  if (pagination) {
+    pagination.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const target = e.target;
+      if (target.tagName !== 'A') return;
+
+      const num = target.getAttribute("data-num");
+
+      pageForm.querySelector("input[name='page']").value = num;
+      pageForm.submit();
+    });
+  }
+
+</script>
+
+
+</body>
+</html>

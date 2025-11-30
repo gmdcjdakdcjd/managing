@@ -28,6 +28,25 @@
             grid-template-columns: repeat(2, 1fr);
             gap: 1.5rem;
         }
+
+        .latest-info {
+            font-size: 0.85rem;
+            min-width: 90px;
+            color: #333;
+        }
+        .latest-info.up {
+            color: #d93025;  /* 상승: 빨강 */
+            font-weight: 600;
+        }
+        .latest-info.down {
+            color: #1a73e8; /* 하락: 파랑 */
+            font-weight: 600;
+        }
+
+        .latest-date {
+            font-size: 0.7rem;
+            color: #666;
+        }
     </style>
 </head>
 
@@ -40,9 +59,14 @@
 
         <!-- 8개 차트 공통 구조 -->
         <!-- KOSPI -->
+        <!-- KOSPI -->
         <div class="card shadow-sm">
-            <div class="card-header fw-bold d-flex justify-content-between align-items-center">
-                <span>KOSPI</span>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-bold">KOSPI</span>
+
+                <!-- 최신 가격/등락률 -->
+                <span class="latest-info text-end" data-id="kospi"></span>
+
                 <div class="btn-group btn-group-sm chart-range" data-target="kospi">
                     <button class="btn btn-outline-primary" data-range="1m">1M</button>
                     <button class="btn btn-outline-primary active" data-range="3m">3M</button>
@@ -57,8 +81,9 @@
 
         <!-- SPX -->
         <div class="card shadow-sm">
-            <div class="card-header fw-bold d-flex justify-content-between align-items-center">
-                <span>S&P500</span>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-bold">S&P500</span>
+                <span class="latest-info text-end" data-id="spx"></span>
                 <div class="btn-group btn-group-sm chart-range" data-target="spx">
                     <button class="btn btn-outline-primary" data-range="1m">1M</button>
                     <button class="btn btn-outline-primary active" data-range="3m">3M</button>
@@ -73,8 +98,9 @@
 
         <!-- USD -->
         <div class="card shadow-sm">
-            <div class="card-header fw-bold d-flex justify-content-between align-items-center">
-                <span>USD</span>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-bold">USD</span>
+                <span class="latest-info text-end" data-id="usd"></span>
                 <div class="btn-group btn-group-sm chart-range" data-target="usd">
                     <button class="btn btn-outline-primary" data-range="1m">1M</button>
                     <button class="btn btn-outline-primary active" data-range="3m">3M</button>
@@ -89,8 +115,9 @@
 
         <!-- JPY -->
         <div class="card shadow-sm">
-            <div class="card-header fw-bold d-flex justify-content-between align-items-center">
-                <span>JPY</span>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-bold">JPY</span>
+                <span class="latest-info text-end" data-id="jpy"></span>
                 <div class="btn-group btn-group-sm chart-range" data-target="jpy">
                     <button class="btn btn-outline-primary" data-range="1m">1M</button>
                     <button class="btn btn-outline-primary active" data-range="3m">3M</button>
@@ -105,8 +132,9 @@
 
         <!-- 금 KR -->
         <div class="card shadow-sm">
-            <div class="card-header fw-bold d-flex justify-content-between align-items-center">
-                <span>금(KR)</span>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-bold">금(KR)</span>
+                <span class="latest-info text-end" data-id="goldKr"></span>
                 <div class="btn-group btn-group-sm chart-range" data-target="goldKr">
                     <button class="btn btn-outline-primary" data-range="1m">1M</button>
                     <button class="btn btn-outline-primary active" data-range="3m">3M</button>
@@ -119,10 +147,11 @@
             </div>
         </div>
 
-        <!-- Gold Global -->
+        <!-- Gold(Global) -->
         <div class="card shadow-sm">
-            <div class="card-header fw-bold d-flex justify-content-between align-items-center">
-                <span>Gold(Global)</span>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-bold">Gold(Global)</span>
+                <span class="latest-info text-end" data-id="goldGl"></span>
                 <div class="btn-group btn-group-sm chart-range" data-target="goldGl">
                     <button class="btn btn-outline-primary" data-range="1m">1M</button>
                     <button class="btn btn-outline-primary active" data-range="3m">3M</button>
@@ -137,8 +166,9 @@
 
         <!-- WTI -->
         <div class="card shadow-sm">
-            <div class="card-header fw-bold d-flex justify-content-between align-items-center">
-                <span>WTI</span>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-bold">WTI</span>
+                <span class="latest-info text-end" data-id="wti"></span>
                 <div class="btn-group btn-group-sm chart-range" data-target="wti">
                     <button class="btn btn-outline-primary" data-range="1m">1M</button>
                     <button class="btn btn-outline-primary active" data-range="3m">3M</button>
@@ -153,19 +183,21 @@
 
         <!-- Dubai -->
         <div class="card shadow-sm">
-            <div class="card-header fw-bold d-flex justify-content-between align-items-center">
-                <span>Dubai Oil</span>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-bold">Dubai Oil</span>
+                <span class="latest-info text-end" data-id="dubai"></span>
                 <div class="btn-group btn-group-sm chart-range" data-target="dubai">
                     <button class="btn btn-outline-primary" data-range="1m">1M</button>
                     <button class="btn btn-outline-primary active" data-range="3m">3M</button>
                     <button class="btn btn-outline-primary" data-range="6m">6M</button>
                     <button class="btn btn-outline-primary" data-range="1y">1Y</button>
                 </div>
-            </div>
+            </div>Z
             <div class="card-body chart-container">
                 <canvas id="dubai"></canvas>
             </div>
         </div>
+
 
     </div>
 </div>
@@ -353,6 +385,58 @@
                     btn.classList.add("active");
                 });
             });
+
+            // =======================
+// 최신 가격 + 등락률 표시
+// =======================
+            // =======================
+// 최신 가격 + 등락률 표시
+// =======================
+            // =======================
+// 최신 가격 + 등락률 + 기준일 표시
+// =======================
+            Object.keys(datasets).forEach(id => {
+                const list = datasets[id];
+                if (!list || list.length < 2) return;
+
+                const last = list[list.length - 1];
+                const prev = list[list.length - 2];
+
+                const lastPrice = Number(last.close);
+                const prevPrice = Number(prev.close);
+
+                const diff = lastPrice - prevPrice;
+                const rate = (diff / prevPrice) * 100;
+
+                const priceText = lastPrice.toLocaleString();
+                const diffText = diff > 0 ? `+${diff.toLocaleString()}` : diff.toLocaleString();
+                const rateText = rate > 0 ? `+${rate.toFixed(2)}%` : `${rate.toFixed(2)}%`;
+
+                const tag = document.querySelector(`.latest-info[data-id="${id}"]`);
+                if (!tag) return;
+
+                const priceFormatted = usdSet[id]
+                    ? `$${priceText}`
+                    : `${priceText}원`;
+
+                const arrow = diff > 0 ? "▲" : diff < 0 ? "▼" : "";
+
+                tag.innerHTML = `
+                                ${priceFormatted}
+                                <span style="margin-left:6px;">
+                                    ${arrow}${diffText} (${rateText})
+                                </span>
+                                <span style="color:#777; margin-left:10px;">
+                                    [ ${last.date} ]
+                                </span>
+                            `;
+
+
+                if (diff > 0) tag.classList.add("up");
+                else if (diff < 0) tag.classList.add("down");
+            });
+
+
 
         });
     </script>

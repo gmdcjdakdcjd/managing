@@ -2,10 +2,11 @@ package com.stock.managing.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.stock.managing.domain.BondDailyYield;
 import com.stock.managing.dto.*;
-import com.stock.managing.service.BoardService;
-import com.stock.managing.service.IndicatorService;
-import com.stock.managing.service.StockViewService;
+import com.stock.managing.enums.KRStrategy;
+import com.stock.managing.enums.USStrategy;
+import com.stock.managing.service.*;
 import org.springframework.beans.factory.annotation.Value;
 
 
@@ -16,25 +17,19 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 
 import java.io.File;
 import java.nio.file.Files;
 import java.time.LocalDate;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import com.stock.managing.service.MarkdownService; // added
 import org.springframework.beans.factory.annotation.Value; // keep single import
 
 
@@ -48,18 +43,25 @@ public class BoardController {
     private final MarkdownService markdownService; // added
     private final StockViewService stockService;
     private final IndicatorService indicatorService;
-
+    private final BondService bondService;  // ← 이거 추가
+    private final StrategyDetailService strategyDetailService;
+    private final StrategyResultService strategyResultService;
 
     @Value("${com.stock.upload.path}")
     private String uploadPath;
 
-    @GetMapping("/index")
-    public String index(Model model) {
+    @GetMapping("/")
+    public String rootToIndex() {
+        return "board/index";
+    }
+
+    @GetMapping("/indicator")
+    public String indicator(Model model) {
 
         var kospiList = indicatorService.getIndicator("KOSPI");
-        var spxList = indicatorService.getIndicator("SPX");
+        var spxList = indicatorService.getIndicator("SNP500");
         var usdList = indicatorService.getIndicator("USD");
-        var jpyList = indicatorService.getIndicator("USDJPY");
+        var jpyList = indicatorService.getIndicator("USD_JPY");
         var goldKrList = indicatorService.getIndicator("GOLD_KR");
         var goldGlobalList = indicatorService.getIndicator("GOLD_GLOBAL");
         var wtiList = indicatorService.getIndicator("WTI");
@@ -86,7 +88,71 @@ public class BoardController {
         convert(kospiList).forEach(m -> log.info("Converted → date={}, close={}", m.get("date"), m.get("close")));
 
 
-        return "board/index";
+        return "board/indicator";
+    }
+
+    @GetMapping("/bond")
+    public String bond(Model model) {
+
+        // ------------------------------
+        // 미국 금리 (2Y, 5Y, 10Y, 30Y)
+        // ------------------------------
+        var us2y = bondService.getBondYield("US2YT=X");
+        var us5y = bondService.getBondYield("US5YT=X");
+        var us10y = bondService.getBondYield("US10YT=X");
+        var us30y = bondService.getBondYield("US30YT=X");
+
+        // ------------------------------
+        // 한국 금리 (3Y, 5Y, 10Y, 30Y)
+        // ------------------------------
+        var kr3y = bondService.getBondYield("KR3YT=RR");
+        var kr5y = bondService.getBondYield("KR5YT=RR");
+        var kr10y = bondService.getBondYield("KR10YT=RR");
+        var kr20y = bondService.getBondYield("KR20YT=RR");
+
+        // ------------------------------
+        // 일본 금리 (2Y, 5Y, 10Y, 30Y)
+        // ------------------------------
+        var jp2y = bondService.getBondYield("JP2YT=XX");
+        var jp5y = bondService.getBondYield("JP5YT=XX");
+        var jp10y = bondService.getBondYield("JP10YT=XX");
+        var jp30y = bondService.getBondYield("JP30YT=XX");
+
+        // ------------------------------
+        // 중국 금리 (1Y, 3Y, 5Y, 10Y)
+        // ------------------------------
+        var cn1y = bondService.getBondYield("CN1YT=RR");
+        var cn3y = bondService.getBondYield("CN3YT=RR");
+        var cn5y = bondService.getBondYield("CN5YT=RR");
+        var cn10y = bondService.getBondYield("CN10YT=RR");
+
+        // ------------------------------
+        // Thymeleaf에 전달
+        // ------------------------------
+        model.addAttribute("us2y", convertBond(us2y));
+        model.addAttribute("us5y", convertBond(us5y));
+        model.addAttribute("us10y", convertBond(us10y));
+        model.addAttribute("us30y", convertBond(us30y));
+
+        model.addAttribute("kr3y", convertBond(kr3y));
+        model.addAttribute("kr5y", convertBond(kr5y));
+        model.addAttribute("kr10y", convertBond(kr10y));
+        model.addAttribute("kr20y", convertBond(kr20y));
+
+        model.addAttribute("jp2y", convertBond(jp2y));
+        model.addAttribute("jp5y", convertBond(jp5y));
+        model.addAttribute("jp10y", convertBond(jp10y));
+        model.addAttribute("jp30y", convertBond(jp30y));
+
+        model.addAttribute("cn1y", convertBond(cn1y));
+        model.addAttribute("cn3y", convertBond(cn3y));
+        model.addAttribute("cn5y", convertBond(cn5y));
+        model.addAttribute("cn10y", convertBond(cn10y));
+
+        log.info("US 10Y → {}", us10y);
+        log.info("KR 10Y → {}", kr10y);
+
+        return "board/bond";
     }
 
 
@@ -101,32 +167,164 @@ public class BoardController {
                 .toList();
     }
 
+    private List<Map<String, Object>> convertBond(List<BondDailyYieldDTO> list) {
+        return list.stream()
+                .map(dto -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("date", dto.getDate().toString());
+                    map.put("close", dto.getClose());
+                    map.put("open", dto.getOpen());
+                    map.put("high", dto.getHigh());
+                    map.put("low", dto.getLow());
+                    map.put("diff", dto.getDiff());
+                    return map;
+                })
+                .toList();
+    }
+
 
     // 한국 주식
-    @GetMapping("/list")
-    public void list(PageRequestDTO pageRequestDTO, Model model) {
+    @GetMapping("/listKR")
+    public String listKR(
+            PageRequestDTO pageRequestDTO,
+            @RequestParam(value = "strategy", required = false) String strategy,
+            @RequestParam(value = "regDate", required = false) String regDate,
+            Model model) {
 
-        PageResponseDTO<BoardListAllDTO> responseDTO = boardService.listWithAll(pageRequestDTO);
+       /* PageResponseDTO<BoardListAllDTO> responseDTO = boardService.listWithAll(pageRequestDTO);
 
         log.info(responseDTO);
 
+        model.addAttribute("responseDTO", responseDTO);*/
+
+
+        // 📌 전략명 리스트 — 고정된 KR 전략만
+        List<String> strategyList = strategyResultService.getKRStrategyList();
+        model.addAttribute("strategyList", strategyList);
+
+        // 📌 필터링된 결과 조회
+        PageResponseDTO<StrategyResultDTO> responseDTO =
+                strategyResultService.listKR(pageRequestDTO, strategy, regDate);
+
         model.addAttribute("responseDTO", responseDTO);
+        model.addAttribute("pageRequestDTO", pageRequestDTO);
+        model.addAttribute("strategy", strategy);
+        model.addAttribute("regDate", regDate);
+
+        return "board/resultListKR";
     }
+
+    @GetMapping("/detailKR")
+    public String detailKR(
+            @RequestParam("strategy") String strategy,
+            @RequestParam("date") String date,
+            Model model) {
+
+        List<StrategyDetailDTO> list = strategyDetailService.getDetail(strategy, date);
+
+        // 전략명 Enum 매핑
+        KRStrategy KRstrategyEnum = KRStrategy.from(strategy);
+        String captureName = (KRstrategyEnum != null) ? KRstrategyEnum.getCaptureName() : "포착값";
+
+        // 종가 헤더명
+        String priceLabel = strategy.contains("WEEKLY") ? "전주종가" : "전일종가";
+
+        model.addAttribute("priceLabel", priceLabel);
+        model.addAttribute("captureName", captureName);
+        model.addAttribute("strategy", strategy);
+        model.addAttribute("date", date);
+        model.addAttribute("detailList", list);
+
+        return "board/detailKR";
+    }
+
     // 미국 주식
     @GetMapping("/listUS")
-    public void listUS(PageRequestDTO pageRequestDTO, Model model) {
+    public String listUS(
+                         PageRequestDTO pageRequestDTO,
+                         @RequestParam(value = "strategy", required = false) String strategy,
+                         @RequestParam(value = "regDate", required = false) String regDate,
+                         Model model) {
 
-        PageResponseDTO<BoardListAllDTO> responseDTO = boardService.listWithAllUS(pageRequestDTO);
+/*        PageResponseDTO<BoardListAllDTO> responseDTO = boardService.listWithAllUS(pageRequestDTO);
 
         log.info(responseDTO);
 
+        model.addAttribute("responseDTO", responseDTO);*/
+
+        // 📌 전략명 리스트 — 고정된 KR 전략만
+        List<String> strategyList = strategyResultService.getUSStrategyList();
+        model.addAttribute("strategyList", strategyList);
+
+        // 📌 필터링된 결과 조회
+        PageResponseDTO<StrategyResultDTO> responseDTO =
+                strategyResultService.listUS(pageRequestDTO, strategy, regDate);
+
         model.addAttribute("responseDTO", responseDTO);
+        model.addAttribute("pageRequestDTO", pageRequestDTO);
+        model.addAttribute("strategy", strategy);
+        model.addAttribute("regDate", regDate);
+
+
+        return "board/resultListUS";
+    }
+
+    @GetMapping("/detailUS")
+    public String detailUS(
+            @RequestParam("strategy") String strategy,
+            @RequestParam("date") String date,
+            Model model) {
+
+        List<StrategyDetailDTO> list = strategyDetailService.getDetail(strategy, date);
+
+        // 전략명 Enum 매핑
+        USStrategy USstrategyEnum = USStrategy.from(strategy);
+        String captureName = (USstrategyEnum != null) ? USstrategyEnum.getCaptureName() : "포착값";
+
+        // 종가 헤더명
+        String priceLabel = strategy.contains("WEEKLY") ? "전주종가" : "전일종가";
+
+        model.addAttribute("priceLabel", priceLabel);
+        model.addAttribute("captureName", captureName);
+        model.addAttribute("strategy", strategy);
+        model.addAttribute("date", date);
+        model.addAttribute("detailList", list);
+
+        return "board/detailUS";
     }
 
     @GetMapping("/issue")
     public String issue(Model model) {
 
-        LocalDate today = LocalDate.now();
+        String[] strategies = {
+                "DAILY_DROP_SPIKE_KR",
+                "DAILY_RISE_SPIKE_KR",
+                "DAILY_TOP20_VOLUME_KR",
+                "ETF_TOP20_VOLUME_KR",
+                "DAILY_DROP_SPIKE_US",
+                "DAILY_RISE_SPIKE_US",
+                "DAILY_TOP20_VOLUME_US",
+                "ETF_TOP20_VOLUME_US"
+        };
+
+        Map<String, List<StrategyDetailDTO>> data = new LinkedHashMap<>();
+
+        String today = LocalDate.now().toString();
+
+
+        for (String s : strategies) {
+            List<StrategyDetailDTO> list = strategyDetailService.getLatestOrToday(s, today);
+            data.put(s, list);
+        }
+
+        // -----------------------------
+        // 🔥 Thymeleaf 전달
+        // -----------------------------
+        model.addAttribute("strategyMap", data);
+
+        return "board/issue";
+
+        /*LocalDate today = LocalDate.now();
         LocalDate yesterday = today.minusDays(1);
 
         // ✅ 각 전략별 데이터 조회
@@ -194,27 +392,49 @@ public class BoardController {
 
         log.info("🏠 Home Model Data: {}", model.asMap());
 
-        return "board/issue"; // templates/board/issue.html 렌더링
+        return "board/issue"; // templates/board/issue.html 렌더링*/
     }
 
     @GetMapping("/dualMomentumList")
     public String dualMomentumList(Model model) {
-        LocalDate today = LocalDate.now();
-        LocalDate yesterday = today.minusDays(1);
+//        LocalDate today = LocalDate.now();
+//        LocalDate yesterday = today.minusDays(1);
+//
+//        model.addAttribute("monthList", boardService.getLatestOrTodayBoard("6", today));
+//        model.addAttribute("quarterList", boardService.getLatestOrTodayBoard("7", today));
+//        model.addAttribute("halfList", boardService.getLatestOrTodayBoard("8", today));
+//        model.addAttribute("yearList", boardService.getLatestOrTodayBoard("9", today));
+//
+//        model.addAttribute("monthList_US", boardService.getLatestOrTodayBoard("46", today));
+//        model.addAttribute("quarterList_US", boardService.getLatestOrTodayBoard("47", today));
+//        model.addAttribute("halfList_US", boardService.getLatestOrTodayBoard("48", today));
+//        model.addAttribute("yearList_US", boardService.getLatestOrTodayBoard("49", today));
 
-        model.addAttribute("monthList", boardService.getLatestOrTodayBoard("6", today));
-        model.addAttribute("quarterList", boardService.getLatestOrTodayBoard("7", today));
-        model.addAttribute("halfList", boardService.getLatestOrTodayBoard("8", today));
-        model.addAttribute("yearList", boardService.getLatestOrTodayBoard("9", today));
+        String[] strategies = {
+                "DUAL_MOMENTUM_1M_KR",
+                "DUAL_MOMENTUM_3M_KR",
+                "DUAL_MOMENTUM_6M_KR",
+                "DUAL_MOMENTUM_1Y_KR",
+                "DUAL_MOMENTUM_1M_US",
+                "DUAL_MOMENTUM_3M_US",
+                "DUAL_MOMENTUM_6M_US",
+                "DUAL_MOMENTUM_1Y_US"
+        };
 
-        model.addAttribute("monthList_US", boardService.getLatestOrTodayBoard("46", today));
-        model.addAttribute("quarterList_US", boardService.getLatestOrTodayBoard("47", today));
-        model.addAttribute("halfList_US", boardService.getLatestOrTodayBoard("48", today));
-        model.addAttribute("yearList_US", boardService.getLatestOrTodayBoard("49", today));
+        Map<String, List<StrategyDetailDTO>> data = new LinkedHashMap<>();
 
+        String today = LocalDate.now().toString();
+
+
+        for (String s : strategies) {
+            data.put(s, strategyDetailService.getLatestOrToday(s, today));
+        }
+
+        model.addAttribute("strategyMap", data);
         return "board/dualMomentum";
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/adminDashboard")
     public String adminDashboard(Model model) {
         List<BoardDTO> reports = boardService.getAdminReports().stream()
@@ -245,7 +465,7 @@ public class BoardController {
 
         String keyword = (stockName != null && !stockName.isBlank()) ? stockName : stockCode;
 
-        List<SignalInfoDTO> signalList = boardService.getSignalInfoListByKeyword(keyword);
+        List<StrategyDetailDTO> signalList = strategyDetailService.searchDetail(keyword);
         model.addAttribute("signalList", signalList);
 
         StockDTO stockInfo = stockService.getStockInfo(stockName, stockCode);
@@ -280,10 +500,10 @@ public class BoardController {
     }
 
 
-
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/register")
-    public void registerGET() { }
+    public void registerGET() {
+    }
 
     @PostMapping("/register")
     public String registerPost(@Valid BoardDTO boardDTO, BindingResult bindingResult,
@@ -361,7 +581,6 @@ public class BoardController {
 
         return "redirect:/board/read";
     }
-
 
 
     @PreAuthorize("hasRole('ADMIN')")

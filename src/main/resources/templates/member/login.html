@@ -19,11 +19,8 @@ fit=no"/>
             LOGIN Page
         </div>
 
-        <th:block th:if="${param.logout != null}">
-            <h1>Logout........</h1>
-        </th:block>
-
         <div class="card-body">
+
             <form id="registerForm" action="/member/login" method="post">
                 <div class="input-group mb-3">
                     <span class="input-group-text">아이디</span>
@@ -48,12 +45,8 @@ fit=no"/>
                     </div>
                 </div>
             </form>
+        </div>
 
-            <!-- <div>
-                <a href="/oauth2/authorization/kakao">KAKAO</a>
-            </div> -->
-
-        </div><!--end card body-->
     </div><!--end card-->
 </div>
 </body>

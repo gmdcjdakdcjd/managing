@@ -171,7 +171,7 @@
                                 </thead>
                                 <tbody>
                                 <tr th:each="info : ${signalList}">
-                                    <td th:text="${info.strategyName}"></td>
+                                    <td th:text="${info.action}"></td>
                                     <td th:text="${info.signalDate}"></td>
                                 </tr>
                                 </tbody>
@@ -211,7 +211,11 @@
                 const closeText = tds[1]?.innerText?.replace(/[^0-9]/g, "");
                 if (!dateText || !closeText) return null;
                 const [y, m, d] = dateText.split(/[.\-]/).map(Number);
-                return { x: new Date(y, m - 1, d), y: Number(closeText) };
+                //return { x: new Date(y, m - 1, d), y: Number(closeText) };
+                return {
+                    x: new Date(Date.UTC(y, m - 1, d)),
+                    y: Number(closeText)
+                };
             }).filter(p => p && !isNaN(p.y));
 
             const ctx = document.getElementById("stockChart").getContext("2d");

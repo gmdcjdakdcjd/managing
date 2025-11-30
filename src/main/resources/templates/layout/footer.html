@@ -7,14 +7,14 @@
     © 2025 STOCK PROJECT · All rights reserved · v2.1.0
     · <span th:text="${#dates.format(#dates.createNow(), 'yyyy-MM-dd')}"></span>
 
-    <!-- 🔹 로그인 안 된 상태 -->
+   <!--  🔹 로그인 안 된 상태
     <span sec:authorize="isAnonymous()">
         · <a th:href="@{/member/join}" class="text-decoration-none text-muted">회원가입</a>
         · <a th:href="@{/member/login}" class="text-decoration-none text-muted">관리자 로그인</a>
     </span>
 
-    <!-- 🔹 로그인 된 상태 -->
+    &lt;!&ndash; 🔹 로그인 된 상태 &ndash;&gt;
     <span sec:authorize="isAuthenticated()">
         · <a th:href="@{/logout}" class="text-decoration-none text-muted">로그아웃</a>
-    </span>
+    </span>-->
 </footer>

@@ -13,7 +13,7 @@ public interface VDailyPriceUsRepository extends JpaRepository<VDailyPriceUs, Lo
 
     @Query(value = """
                         SELECT * 
-                        FROM v_daily_price_us
+                        FROM daily_price_us
                         WHERE code = :code
                         ORDER BY date DESC
                     """, nativeQuery = true)

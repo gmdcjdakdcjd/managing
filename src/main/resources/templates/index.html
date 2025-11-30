@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+  <meta charset="UTF-8">
+  <title>STOCK PROJECT</title>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #0d1b2a, #1b263b, #415a77);
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    /* 🔥 상단 우측 고정 로그인 영역 */
+    .top-right-auth {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      z-index: 100;
+    }
+
+    .auth-btn {
+      padding: 8px 16px;
+      height: 40px;
+      border-radius: 6px;
+      text-decoration: none;
+      color: white;
+      background: rgba(255,255,255,0.18);
+      font-size: 0.9rem;
+      transition: 0.2s;
+      display: flex;
+      align-items: center;
+    }
+
+    .auth-btn:hover {
+      background: rgba(255,255,255,0.32);
+      transform: translateY(-2px);
+    }
+
+    .logout-btn {
+      background: rgba(255,255,255,0.15);
+      color: white;
+      border: none;
+      height: 40px;
+      padding: 0 16px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .landing-wrapper {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 0 1.5rem;
+    }
+
+    .landing-title {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .landing-sub {
+      font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+      font-weight: 400;
+      margin-bottom: 3rem;
+      opacity: 0.9;
+    }
+
+    .menu-buttons {
+      display: flex;
+      flex-wrap: nowrap;
+      justify-content: center;
+      gap: 12px;
+      max-width: 800px;
+    }
+
+    .menu-buttons a {
+      font-size: clamp(0.9rem, 2.2vw, 1.2rem);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.15);
+      color: white;
+      text-decoration: none;
+      transition: 0.2s;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      height: 48px;
+      padding: 0 24px;
+    }
+
+    .menu-buttons a:hover {
+      background: rgba(255,255,255,0.25);
+      transform: translateY(-2px);
+    }
+
+    @media (max-width: 900px) {
+      .menu-buttons { flex-wrap: wrap; }
+    }
+
+    @media (max-width: 480px) {
+      .landing-wrapper { padding: 0 1rem; }
+      .menu-buttons {
+        flex-direction: column;
+        width: 100%;
+        align-items: center;
+      }
+      .menu-buttons a { width: 80%; text-align: center; }
+    }
+  </style>
+
+</head>
+
+<body>
+
+<!-- 🔥 상단 우측 로그인 / 회원가입 / 로그아웃 -->
+<div class="top-right-auth">
+
+  <!-- 로그인 안됨 -->
+  <a sec:authorize="isAnonymous()" href="/member/login" class="auth-btn">로그인</a>
+  <a sec:authorize="isAnonymous()" href="/member/join" class="auth-btn">회원가입</a>
+
+
+
+  <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post">
+    <button type="submit" class="logout-btn">로그아웃</button>
+  </form>
+</div>
+
+<div class="landing-wrapper">
+
+  <div class="landing-title">STOCK PROJECT</div>
+
+  <div class="landing-sub">
+    오늘의 시장을 가장 빠르게 이해하는 방법
+  </div>
+
+  <div class="menu-buttons">
+    <a href="/board/indicator">주요 지수</a>
+    <a href="/board/bond">채권</a>
+    <a href="/board/issue">이슈 종목</a>
+    <a href="/board/listKR">KOSPI / ETF</a>
+    <a href="/board/listUS">미국주식 / ETF</a>
+    <a href="/board/dualMomentumList">수익률 상위</a>
+    <a href="/board/stockInfo">종목 검색</a>
+    <!-- 로그인됨 -->
+    <a sec:authorize="isAuthenticated()" href="/mystock/list" class="auth-btn">나의 관심 종목</a>
+    <a sec:authorize="hasRole('ADMIN')"
+       href="/manage/batch/history"
+       class="auth-btn">
+      배치 로그
+    </a>
+
+  </div>
+
+</div>
+
+</body>
+</html>

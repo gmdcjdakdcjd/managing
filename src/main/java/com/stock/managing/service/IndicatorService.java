@@ -1,6 +1,6 @@
 package com.stock.managing.service;
 
-import com.stock.managing.domain.MarketIndicator;
+import com.stock.managing.domain.DailyPriceIndicator;
 import com.stock.managing.dto.MarketIndicatorDTO;
 import com.stock.managing.repository.IndicatorRepository;
 import lombok.RequiredArgsConstructor;
