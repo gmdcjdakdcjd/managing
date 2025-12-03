@@ -2,6 +2,8 @@ package com.stock.managing.dto;
 
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -10,7 +12,7 @@ import lombok.*;
 public class BondDailyYieldDTO {
 
     private String code;
-    private String date;
+    private LocalDate date;
     private Double open;
     private Double high;
     private Double low;

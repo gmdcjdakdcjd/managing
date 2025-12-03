@@ -57,10 +57,44 @@ public class MyStockController {
             if (sn == null) continue;
 
             if (sn.endsWith("_KR")) {
+
+                s.setCurrentPrice(
+                        s.getCurrentPrice() == null ? null : Math.floor(s.getCurrentPrice())
+                );
+                s.setPriceAtAdd(
+                        s.getPriceAtAdd() == null ? null : Math.floor(s.getPriceAtAdd())
+                );
+                s.setTargetPrice5(
+                        s.getTargetPrice5() == null ? null : Math.floor(s.getTargetPrice5())
+                );
+                s.setTargetPrice10(
+                        s.getTargetPrice10() == null ? null : Math.floor(s.getTargetPrice10())
+                );
+
                 krList.add(s);
-            } else if (sn.endsWith("_US")) {
+            }
+            else if (sn.endsWith("_US")) {
+
+                s.setCurrentPrice(
+                        s.getCurrentPrice() == null ? null :
+                                Math.floor(s.getCurrentPrice() * 100) / 100.0
+                );
+                s.setPriceAtAdd(
+                        s.getPriceAtAdd() == null ? null :
+                                Math.floor(s.getPriceAtAdd() * 100) / 100.0
+                );
+                s.setTargetPrice5(
+                        s.getTargetPrice5() == null ? null :
+                                Math.floor(s.getTargetPrice5() * 100) / 100.0
+                );
+                s.setTargetPrice10(
+                        s.getTargetPrice10() == null ? null :
+                                Math.floor(s.getTargetPrice10() * 100) / 100.0
+                );
+
                 usList.add(s);
             }
+
         }
 
         model.addAttribute("krList", krList);
@@ -68,6 +102,7 @@ public class MyStockController {
 
         return "mystock/list";
     }
+
 
 
 

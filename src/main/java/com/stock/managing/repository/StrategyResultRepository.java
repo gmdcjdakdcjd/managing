@@ -8,12 +8,13 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface StrategyResultRepository extends JpaRepository<StrategyResult, StrategyResultId> {
 
     // 특정 전략명 + 특정 날짜 존재 여부
-    boolean existsByStrategyNameAndSignalDate(String strategyName, String signalDate);
+    boolean existsByStrategyNameAndSignalDate(String strategyName, LocalDate signalDate);
 
     // 오늘 없으면 가장 최근 날짜 찾아오기
     StrategyResult findTopByStrategyNameOrderBySignalDateDesc(String strategyName);
@@ -27,10 +28,39 @@ public interface StrategyResultRepository extends JpaRepository<StrategyResult, 
     Page<StrategyResult> findByStrategyName(String strategyName, Pageable pageable);
 
     // ✔ 날짜만
-    Page<StrategyResult> findBySignalDate(String signalDate, Pageable pageable);
+    Page<StrategyResult> findBySignalDate(LocalDate signalDate, Pageable pageable);
 
     // ✔ 전략명 + 날짜
     Page<StrategyResult> findByStrategyNameAndSignalDate(
-            String strategyName, String signalDate, Pageable pageable
+            String strategyName, LocalDate signalDate, Pageable pageable
+    );
+
+    Page<StrategyResult> findByStrategyNameEndingWithAndSignalDate(
+            String suffix, LocalDate signalDate, Pageable pageable);
+
+    @Query("""
+    SELECT r FROM StrategyResult r
+    WHERE r.strategyName IN :strategies
+      AND (:strategy IS NULL OR r.strategyName = :strategy)
+      AND (:regDate IS NULL OR r.signalDate = :regDate)
+""")
+    Page<StrategyResult> findAllowedKR(
+            @Param("strategies") List<String> strategies,
+            @Param("strategy") String strategy,
+            @Param("regDate") LocalDate regDate,
+            Pageable pageable
+    );
+
+    @Query("""
+    SELECT r FROM StrategyResult r
+    WHERE r.strategyName IN :strategies
+      AND (:strategy IS NULL OR r.strategyName = :strategy)
+      AND (:regDate IS NULL OR r.signalDate = :regDate)
+""")
+    Page<StrategyResult> findAllowedUS(
+            @Param("strategies") List<String> strategies,
+            @Param("strategy") String strategy,
+            @Param("regDate") LocalDate regDate,
+            Pageable pageable
     );
 }

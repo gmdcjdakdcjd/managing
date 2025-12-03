@@ -3,6 +3,9 @@ package com.stock.managing.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.sql.Date;
+import java.time.LocalDate;
+
 @Entity
 @Table(name = "strategy_result")
 @Getter
@@ -19,7 +22,7 @@ public class StrategyResult {
 
     @Id
     @Column(name = "signal_date", nullable = false)
-    private String signalDate;     // DATE → String or LocalDate도 가능
+    private LocalDate signalDate;     // DATE → String or LocalDate도 가능
 
     @Column(name = "signal_type")
     private String signalType;
@@ -28,5 +31,5 @@ public class StrategyResult {
     private Integer totalData;
 
     @Column(name = "created_at")
-    private String createdAt;      // DATETIME
+    private Date createdAt;      // DATETIME
 }

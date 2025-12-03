@@ -2,6 +2,10 @@ package com.stock.managing.dto;
 
 import lombok.*;
 
+import java.sql.Date;
+import java.time.LocalDate;
+
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -10,14 +14,14 @@ import lombok.*;
 public class StrategyDetailDTO {
 
     private String resultId;
-    private String signalDate;
+    private LocalDate signalDate;
     private String code;
     private String name;
     private String action;
-    private Long  price;
-    private Long  prevClose;
-    private Long  diff;
+    private Double  price;
+    private Double  prevClose;
+    private Double  diff;
     private Long  volume;
     private Integer specialValue;
-    private String createdAt;
+    private Date createdAt;
 }

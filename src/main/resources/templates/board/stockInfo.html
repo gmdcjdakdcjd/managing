@@ -80,16 +80,33 @@
 
     <!-- 🔍 검색 Form -->
     <form action="/board/searchStock" method="get" class="row g-2 align-items-end mb-4">
-        <div class="col-md-4">
+        <div class="col-md-4 position-relative">
             <label for="stockName" class="form-label small fw-semibold mb-1">종목명</label>
-            <input type="text" class="form-control" id="stockName" name="stockName"
-                   placeholder="예: 삼성전자" th:value="${param.stockName}">
+
+            <input type="text"
+                   class="form-control"
+                   id="stockName"
+                   name="stockName"
+                   placeholder="예: 삼성전자"
+                   th:value="${param.stockName}">
+
+            <!-- 🔽 자동완성 리스트 (여기 넣으면 OK) -->
+            <ul id="autocompleteList"
+                class="list-group position-absolute w-100"
+                style="z-index: 1000; display:none; max-height: 200px; overflow-y: auto;">
+            </ul>
         </div>
-        <div class="col-md-4">
+
+        <div class="col-md-4 position-relative">
             <label for="stockCode" class="form-label small fw-semibold mb-1">종목코드</label>
             <input type="text" class="form-control" id="stockCode" name="stockCode"
                    placeholder="예: 005930" th:value="${param.stockCode}">
+
+            <ul id="codeAutocompleteList"
+                class="list-group position-absolute w-100"
+                style="z-index:1000; display:none; max-height:200px; overflow-y:auto;"></ul>
         </div>
+
         <div class="col-md-4 d-flex flex-column justify-content-end">
             <label class="form-label small fw-semibold mb-1 invisible">검색</label>
             <button type="submit" class="btn btn-primary w-100 fw-semibold">🔍 검색</button>
@@ -121,12 +138,41 @@
 
                     <tbody th:if="${priceList != null}">
                     <tr th:each="row : ${priceList}">
+
+                        <!-- 날짜 -->
                         <td th:text="${row.date != null ? row.date : '-'}"></td>
-                        <td th:text="${(stock.marketType == 'KOSPI' or stock.marketType == 'KOSDAQ') ? #numbers.formatInteger(row.close, 0, 'COMMA') + '원' : '$' + #numbers.formatInteger(row.close, 0, 'COMMA')}"></td>
+
+                        <!-- 종가 -->
+                        <td th:text="${
+        (stock.marketType == 'KOSPI' or stock.marketType == 'KOSDAQ')
+            ? row.close + '원'
+            : '$' + row.close
+    }"></td>
+
+                        <!-- 거래량 -->
                         <td th:text="${#numbers.formatInteger(row.volume, 0, 'COMMA')}"></td>
-                        <td th:text="${(stock.marketType == 'KOSPI' or stock.marketType == 'KOSDAQ') ? #numbers.formatInteger(row.open, 0, 'COMMA') + '원' : '$' + #numbers.formatInteger(row.open, 0, 'COMMA')}"></td>
-                        <td th:text="${(stock.marketType == 'KOSPI' or stock.marketType == 'KOSDAQ') ? #numbers.formatInteger(row.high, 0, 'COMMA') + '원' : '$' + #numbers.formatInteger(row.high, 0, 'COMMA')}"></td>
-                        <td th:text="${(stock.marketType == 'KOSPI' or stock.marketType == 'KOSDAQ') ? #numbers.formatInteger(row.low, 0, 'COMMA') + '원' : '$' + #numbers.formatInteger(row.low, 0, 'COMMA')}"></td>
+
+                        <!-- 시가 -->
+                        <td th:text="${
+        (stock.marketType == 'KOSPI' or stock.marketType == 'KOSDAQ')
+            ? row.open + '원'
+            : '$' + row.open
+    }"></td>
+
+                        <!-- 고가 -->
+                        <td th:text="${
+        (stock.marketType == 'KOSPI' or stock.marketType == 'KOSDAQ')
+            ? row.high + '원'
+            : '$' + row.high
+    }"></td>
+
+                        <!-- 저가 -->
+                        <td th:text="${
+        (stock.marketType == 'KOSPI' or stock.marketType == 'KOSDAQ')
+            ? row.low + '원'
+            : '$' + row.low
+    }"></td>
+
                     </tr>
                     </tbody>
 
@@ -207,16 +253,24 @@
 
             const priceData = Array.from(rows).map(row => {
                 const tds = row.querySelectorAll("td");
+
                 const dateText = tds[0]?.innerText?.trim();
-                const closeText = tds[1]?.innerText?.replace(/[^0-9]/g, "");
-                if (!dateText || !closeText) return null;
+                if (!dateText) return null;
+
+                // 숫자 + 소수점 유지
+                let closeRaw = tds[1]?.innerText?.trim();
+                let closeText = closeRaw.replace(/[^0-9.]/g, "");
+
+                if (!closeText) return null;
+
                 const [y, m, d] = dateText.split(/[.\-]/).map(Number);
-                //return { x: new Date(y, m - 1, d), y: Number(closeText) };
+
                 return {
                     x: new Date(Date.UTC(y, m - 1, d)),
                     y: Number(closeText)
                 };
             }).filter(p => p && !isNaN(p.y));
+
 
             const ctx = document.getElementById("stockChart").getContext("2d");
 
@@ -258,9 +312,9 @@
                             time: {
                                 unit: "day",
                                 tooltipFormat: "yyyy-MM-dd",
-                                displayFormats: { day: "yyyy-MM-dd" }
+                                displayFormats: {day: "yyyy-MM-dd"}
                             },
-                            grid: { display: false },
+                            grid: {display: false},
                             min: defaultMin,
                             max: now
                         },
@@ -276,7 +330,7 @@
                         }
                     },
                     plugins: {
-                        legend: { display: false },
+                        legend: {display: false},
 
                         // ✅ 마우스 오버 시 툴팁 표시
                         tooltip: {
@@ -347,8 +401,81 @@
                 });
             });
         });
-    </script>
 
+        const nameInput = document.getElementById("stockName");
+        const nameList = document.getElementById("autocompleteList");
+
+        nameInput.addEventListener("input", async () => {
+            const q = nameInput.value.trim();
+            if (q.length < 1) {
+                nameList.style.display = "none";
+                return;
+            }
+
+            const res = await fetch(`/board/autocomplete?q=${q}`);
+            const data = await res.json();
+
+            nameList.innerHTML = "";
+            if (data.length === 0) {
+                nameList.style.display = "none";
+                return;
+            }
+
+            data.forEach(item => {
+                const li = document.createElement("li");
+                li.className = "list-group-item list-group-item-action";
+                li.textContent = `${item.name} (${item.code})`;
+
+                li.addEventListener("click", () => {
+                    nameInput.value = item.name;
+                    nameList.style.display = "none";
+                });
+
+                nameList.appendChild(li);
+            });
+
+            nameList.style.display = "block";
+        });
+
+        const codeInput = document.getElementById("stockCode");
+        const codeList = document.getElementById("codeAutocompleteList");
+
+        codeInput.addEventListener("input", async () => {
+            const q = codeInput.value.trim();
+            if (q.length < 1) {
+                codeList.style.display = "none";
+                return;
+            }
+
+            const res = await fetch(`/board/autocompleteCode?q=${q}`);
+            const data = await res.json();
+
+            codeList.innerHTML = "";
+            if (data.length === 0) {
+                codeList.style.display = "none";
+                return;
+            }
+
+            data.forEach(item => {
+                const li = document.createElement("li");
+                li.className = "list-group-item list-group-item-action";
+                li.textContent = `${item.code} (${item.name})`;
+
+                li.addEventListener("click", () => {
+                    codeInput.value = item.code;
+                    codeList.style.display = "none";
+                });
+
+                codeList.appendChild(li);
+            });
+
+            codeList.style.display = "block";
+        });
+
+
+
+
+    </script>
 
 
 </th:block>

@@ -52,7 +52,6 @@
                     <th>+5%</th>
                     <th>+10%</th>
                     <th>포착 전략</th>
-                    <th>포착값</th>
                     <th>등록일</th>
                     <th>삭제</th>
                 </tr>
@@ -65,11 +64,10 @@
                     <td th:text="${s.name}"></td>
 
                     <!-- 현재가 -->
-                    <td th:text="${#numbers.formatInteger(s.currentPrice, 1, 'COMMA') + ' 원'}"></td>
-
-                    <td th:text="${#numbers.formatInteger(s.priceAtAdd, 1, 'COMMA') + ' 원'}"></td>
-                    <td th:text="${#numbers.formatInteger(s.targetPrice5, 1, 'COMMA') + ' 원'}"></td>
-                    <td th:text="${#numbers.formatInteger(s.targetPrice10, 1, 'COMMA') + ' 원'}"></td>
+                    <td th:text="${#numbers.formatInteger(s.currentPrice, 0, 'COMMA') + ' 원'}"></td>
+                    <td th:text="${#numbers.formatInteger(s.priceAtAdd, 0, 'COMMA') + ' 원'}"></td>
+                    <td th:text="${#numbers.formatInteger(s.targetPrice5, 0, 'COMMA') + ' 원'}"></td>
+                    <td th:text="${#numbers.formatInteger(s.targetPrice10, 0, 'COMMA') + ' 원'}"></td>
 
                     <td>
                         <span th:text="${s.strategyName}"></span>
@@ -78,8 +76,7 @@
                         </a>
                     </td>
 
-                    <td th:text="${s.specialValue}"></td>
-                    <td th:text="${#temporals.format(s.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                    <td th:text="${#temporals.format(s.createdAt, 'yyyy-MM-dd')}"></td>
 
                     <td>
                         <button class="btn btn-sm btn-outline-danger"
@@ -109,7 +106,6 @@
                     <th>+5%</th>
                     <th>+10%</th>
                     <th>포착 전략</th>
-                    <th>포착값</th>
                     <th>등록일</th>
                     <th>삭제</th>
                 </tr>
@@ -122,11 +118,11 @@
                     <td th:text="${s.name}"></td>
 
                     <!-- 현재가 -->
-                    <td th:text="${#numbers.formatDecimal(s.currentPrice, 1, 'COMMA', 2, 'POINT') + ' $'}"></td>
+                    <td th:text="${s.currentPrice + ' $'}"></td>
+                    <td th:text="${s.priceAtAdd + ' $'}"></td>
+                    <td th:text="${s.targetPrice5 + ' $'}"></td>
+                    <td th:text="${s.targetPrice10 + ' $'}"></td>
 
-                    <td th:text="${s.priceAtAdd}"></td>
-                    <td th:text="${s.targetPrice5}"></td>
-                    <td th:text="${s.targetPrice10}"></td>
 
                     <td>
                         <span th:text="${s.strategyName}"></span>
@@ -135,8 +131,7 @@
                         </a>
                     </td>
 
-                    <td th:text="${s.specialValue}"></td>
-                    <td th:text="${#temporals.format(s.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                    <td th:text="${#temporals.format(s.createdAt, 'yyyy-MM-dd')}"></td>
 
                     <td>
                         <button class="btn btn-sm btn-outline-danger"

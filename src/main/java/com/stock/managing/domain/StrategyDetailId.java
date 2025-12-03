@@ -2,6 +2,7 @@ package com.stock.managing.domain;
 
 import lombok.*;
 import java.io.Serializable;
+import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -10,6 +11,6 @@ import java.io.Serializable;
 public class StrategyDetailId implements Serializable {
 
     private String code;
-    private String signalDate;
+    private LocalDate signalDate;
     private String action;
 }

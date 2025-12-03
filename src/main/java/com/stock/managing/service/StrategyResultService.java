@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -33,6 +34,7 @@ public class StrategyResultService {
                 "WEEKLY_52W_NEW_HIGH_KR",
                 "WEEKLY_52W_NEW_LOW_KR",
                 "WEEKLY_TOUCH_MA60_KR"
+
         );
     }
 
@@ -55,36 +57,23 @@ public class StrategyResultService {
     }
 
     // ============================
-    // 🇰🇷 KR 필터 조회
+    //  KR 필터 조회
     // ============================
     public PageResponseDTO<StrategyResultDTO> listKR(
-            PageRequestDTO dto, String strategy, String regDate) {
+            PageRequestDTO dto, String strategy, LocalDate regDate) {
 
         Pageable pageable = dto.getPageable("signalDate");
 
-        Page<StrategyResult> resultPage;
+        // 허용된 KR 전략만
+        List<String> allowedKR = getKRStrategyList();
 
-        if (strategy != null && !strategy.isEmpty()
-                && regDate != null && !regDate.isEmpty()) {
-
-            resultPage = resultRepository
-                    .findByStrategyNameAndSignalDate(strategy, regDate, pageable);
-
-        } else if (strategy != null && !strategy.isEmpty()) {
-
-            resultPage = resultRepository
-                    .findByStrategyName(strategy, pageable);
-
-        } else if (regDate != null && !regDate.isEmpty()) {
-
-            resultPage = resultRepository
-                    .findBySignalDate(regDate, pageable);
-
-        } else {
-
-            resultPage = resultRepository
-                    .findByStrategyNameEndingWith("_KR", pageable);
-        }
+        Page<StrategyResult> resultPage =
+                resultRepository.findAllowedKR(
+                        allowedKR,
+                        (strategy != null && !strategy.isEmpty()) ? strategy : null,
+                        regDate,
+                        pageable
+                );
 
         List<StrategyResultDTO> dtoList = resultPage.stream()
                 .map(this::toDTO)
@@ -98,36 +87,22 @@ public class StrategyResultService {
     }
 
     // ============================
-    // 🇰🇷 US 필터 조회
+    //  US 필터 조회
     // ============================
     public PageResponseDTO<StrategyResultDTO> listUS(
-            PageRequestDTO dto, String strategy, String regDate) {
+            PageRequestDTO dto, String strategy, LocalDate regDate) {
 
         Pageable pageable = dto.getPageable("signalDate");
 
-        Page<StrategyResult> resultPage;
+        List<String> allowedUS = getUSStrategyList(); // ← 수정됨
 
-        if (strategy != null && !strategy.isEmpty()
-                && regDate != null && !regDate.isEmpty()) {
-
-            resultPage = resultRepository
-                    .findByStrategyNameAndSignalDate(strategy, regDate, pageable);
-
-        } else if (strategy != null && !strategy.isEmpty()) {
-
-            resultPage = resultRepository
-                    .findByStrategyName(strategy, pageable);
-
-        } else if (regDate != null && !regDate.isEmpty()) {
-
-            resultPage = resultRepository
-                    .findBySignalDate(regDate, pageable);
-
-        } else {
-
-            resultPage = resultRepository
-                    .findByStrategyNameEndingWith("_US", pageable);
-        }
+        Page<StrategyResult> resultPage =
+                resultRepository.findAllowedUS(
+                        allowedUS,
+                        (strategy != null && !strategy.isEmpty()) ? strategy : null,
+                        regDate,
+                        pageable
+                );
 
         List<StrategyResultDTO> dtoList = resultPage.stream()
                 .map(this::toDTO)
@@ -139,6 +114,7 @@ public class StrategyResultService {
                 .total((int) resultPage.getTotalElements())
                 .build();
     }
+
 
     // ============================
     // 공통 DTO 변환

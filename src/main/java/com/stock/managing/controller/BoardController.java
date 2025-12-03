@@ -29,6 +29,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value; // keep single import
 
@@ -46,6 +47,7 @@ public class BoardController {
     private final BondService bondService;  // ← 이거 추가
     private final StrategyDetailService strategyDetailService;
     private final StrategyResultService strategyResultService;
+    private final AutocompleteService autocompleteService;
 
     @Value("${com.stock.upload.path}")
     private String uploadPath;
@@ -188,7 +190,7 @@ public class BoardController {
     public String listKR(
             PageRequestDTO pageRequestDTO,
             @RequestParam(value = "strategy", required = false) String strategy,
-            @RequestParam(value = "regDate", required = false) String regDate,
+            @RequestParam(value = "regDate", required = false) LocalDate regDate,
             Model model) {
 
        /* PageResponseDTO<BoardListAllDTO> responseDTO = boardService.listWithAll(pageRequestDTO);
@@ -217,7 +219,7 @@ public class BoardController {
     @GetMapping("/detailKR")
     public String detailKR(
             @RequestParam("strategy") String strategy,
-            @RequestParam("date") String date,
+            @RequestParam("date") LocalDate date,
             Model model) {
 
         List<StrategyDetailDTO> list = strategyDetailService.getDetail(strategy, date);
@@ -243,7 +245,7 @@ public class BoardController {
     public String listUS(
                          PageRequestDTO pageRequestDTO,
                          @RequestParam(value = "strategy", required = false) String strategy,
-                         @RequestParam(value = "regDate", required = false) String regDate,
+                         @RequestParam(value = "regDate", required = false) LocalDate regDate,
                          Model model) {
 
 /*        PageResponseDTO<BoardListAllDTO> responseDTO = boardService.listWithAllUS(pageRequestDTO);
@@ -252,7 +254,7 @@ public class BoardController {
 
         model.addAttribute("responseDTO", responseDTO);*/
 
-        // 📌 전략명 리스트 — 고정된 KR 전략만
+        // 📌 전략명 리스트 — 고정된 US 전략만
         List<String> strategyList = strategyResultService.getUSStrategyList();
         model.addAttribute("strategyList", strategyList);
 
@@ -272,26 +274,36 @@ public class BoardController {
     @GetMapping("/detailUS")
     public String detailUS(
             @RequestParam("strategy") String strategy,
-            @RequestParam("date") String date,
+            @RequestParam("date") LocalDate date,
             Model model) {
 
         List<StrategyDetailDTO> list = strategyDetailService.getDetail(strategy, date);
+
+        // 🔥 미국: 소수점 2자리까지 버림
+        List<StrategyDetailDTO> normalized = list.stream()
+                .map(dto -> {
+                    dto.setPrice(Math.floor(dto.getPrice() * 100) / 100.0);
+                    dto.setPrevClose(Math.floor(dto.getPrevClose() * 100) / 100.0);
+                    dto.setDiff(Math.floor(dto.getDiff() * 100) / 100.0);
+                    return dto;
+                })
+                .toList();
 
         // 전략명 Enum 매핑
         USStrategy USstrategyEnum = USStrategy.from(strategy);
         String captureName = (USstrategyEnum != null) ? USstrategyEnum.getCaptureName() : "포착값";
 
-        // 종가 헤더명
         String priceLabel = strategy.contains("WEEKLY") ? "전주종가" : "전일종가";
 
         model.addAttribute("priceLabel", priceLabel);
         model.addAttribute("captureName", captureName);
         model.addAttribute("strategy", strategy);
         model.addAttribute("date", date);
-        model.addAttribute("detailList", list);
+        model.addAttribute("detailList", normalized);
 
         return "board/detailUS";
     }
+
 
     @GetMapping("/issue")
     public String issue(Model model) {
@@ -397,18 +409,6 @@ public class BoardController {
 
     @GetMapping("/dualMomentumList")
     public String dualMomentumList(Model model) {
-//        LocalDate today = LocalDate.now();
-//        LocalDate yesterday = today.minusDays(1);
-//
-//        model.addAttribute("monthList", boardService.getLatestOrTodayBoard("6", today));
-//        model.addAttribute("quarterList", boardService.getLatestOrTodayBoard("7", today));
-//        model.addAttribute("halfList", boardService.getLatestOrTodayBoard("8", today));
-//        model.addAttribute("yearList", boardService.getLatestOrTodayBoard("9", today));
-//
-//        model.addAttribute("monthList_US", boardService.getLatestOrTodayBoard("46", today));
-//        model.addAttribute("quarterList_US", boardService.getLatestOrTodayBoard("47", today));
-//        model.addAttribute("halfList_US", boardService.getLatestOrTodayBoard("48", today));
-//        model.addAttribute("yearList_US", boardService.getLatestOrTodayBoard("49", today));
 
         String[] strategies = {
                 "DUAL_MOMENTUM_1M_KR",
@@ -425,14 +425,44 @@ public class BoardController {
 
         String today = LocalDate.now().toString();
 
-
         for (String s : strategies) {
-            data.put(s, strategyDetailService.getLatestOrToday(s, today));
+            List<StrategyDetailDTO> raw = strategyDetailService.getLatestOrToday(s, today);
+
+            boolean isKR = s.endsWith("_KR");
+            List<StrategyDetailDTO> normalized = normalizeMomentumData(raw, isKR);
+
+            data.put(s, normalized);
         }
 
         model.addAttribute("strategyMap", data);
         return "board/dualMomentum";
     }
+
+
+    private List<StrategyDetailDTO> normalizeMomentumData(List<StrategyDetailDTO> list, boolean isKR) {
+        return list.stream().map(item -> {
+
+            double price = item.getPrice();
+            double prev = item.getPrevClose();
+            double diff = item.getDiff();
+
+            if (isKR) {
+                // 한국: 정수(문자열로 보냄 → 화면에서 236500.0 방지)
+                item.setPrice((double)((long)price));
+                item.setPrevClose((double)((long)prev));
+                item.setDiff((double)((long)diff));
+            } else {
+                // 미국: 소수점 2자리 버림
+                item.setPrice(Math.floor(price * 100) / 100.0);
+                item.setPrevClose(Math.floor(prev * 100) / 100.0);
+                item.setDiff(Math.floor(diff * 100) / 100.0);
+            }
+
+            return item;
+        }).toList();
+    }
+
+
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/adminDashboard")
@@ -482,21 +512,53 @@ public class BoardController {
             List<Map<String, Object>> safeList = stockInfo.getPriceList().stream()
                     .map(p -> {
                         Map<String, Object> map = new HashMap<>();
+
                         map.put("date", p.getDate() != null ? p.getDate().toString() : null);
-                        map.put("open", p.getOpen());
-                        map.put("high", p.getHigh());
-                        map.put("low", p.getLow());
-                        map.put("close", p.getClose());
+
+                        boolean isKR = "KOSPI".equals(stockInfo.getMarketType()) ||
+                                "KOSDAQ".equals(stockInfo.getMarketType());
+
+                        double open  = p.getOpen();
+                        double high  = p.getHigh();
+                        double low   = p.getLow();
+                        double close = p.getClose();
+
+                        if (isKR) {
+                            // 한국: 정수 변환
+                            map.put("open",  (long) open);
+                            map.put("high",  (long) high);
+                            map.put("low",   (long) low);
+                            map.put("close", (long) close);
+                        } else {
+                            // 미국: 소수점 2 자리 버림
+                            map.put("open",  Math.floor(open  * 100) / 100.0);
+                            map.put("high",  Math.floor(high  * 100) / 100.0);
+                            map.put("low",   Math.floor(low   * 100) / 100.0);
+                            map.put("close", Math.floor(close * 100) / 100.0);
+                        }
+
                         map.put("volume", p.getVolume());
                         return map;
                     })
                     .toList();
 
-
             model.addAttribute("priceList", safeList);
+
         }
 
         return "board/stockInfo";
+    }
+
+    @GetMapping("/autocomplete")
+    @ResponseBody
+    public List<Map<String, String>> autocomplete(@RequestParam("q") String keyword) {
+        return autocompleteService.search(keyword);
+    }
+
+    @GetMapping("/autocompleteCode")
+    @ResponseBody
+    public List<Map<String, String>> autocompleteCode(@RequestParam("q") String keyword) {
+        return autocompleteService.search(keyword);
     }
 
 

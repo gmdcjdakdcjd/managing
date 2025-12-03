@@ -20,18 +20,15 @@ public class StrategyDetailService {
 
     public List<StrategyDetailDTO> getLatestOrToday(String strategyName, String today) {
 
-        // 1) 기본적으로 targetDate = today
-        String targetDate = today;
+        // 기존 로직 그대로
+        LocalDate targetDate = LocalDate.parse(today);
 
-        // 2) 미국 전략이면 날짜 -1일
         if (strategyName.endsWith("_US")) {
-            targetDate = LocalDate.parse(today).minusDays(1).toString();
+            targetDate = targetDate.minusDays(1);
         }
 
-        // 3) 해당 날짜 SUMMARY가 있는지 검사
         boolean exists = resultRepository.existsByStrategyNameAndSignalDate(strategyName, targetDate);
 
-        // 4) 없으면 → 최신 날짜로 fallback
         if (!exists) {
             StrategyResult latest = resultRepository
                     .findTopByStrategyNameOrderBySignalDateDesc(strategyName);
@@ -40,14 +37,50 @@ public class StrategyDetailService {
             targetDate = latest.getSignalDate();
         }
 
-        // 5) DETAIL 조회
-        return detailRepository
-                .findByActionAndSignalDateOrderBySpecialValueAsc
-                        (strategyName, targetDate)
+        List<StrategyDetailDTO> list = detailRepository
+                .findByActionAndSignalDateOrderBySpecialValueAsc(strategyName, targetDate)
                 .stream()
                 .map(this::toDTO)
                 .toList();
+
+        // 🔥🔥 여기서 KR/US 구분해 가격 포맷 처리 🔥🔥
+        return formatPrice(strategyName, list);
     }
+
+    private List<StrategyDetailDTO> formatPrice(String strategyName, List<StrategyDetailDTO> list) {
+
+        boolean isKR = strategyName.endsWith("_KR");
+        boolean isUS = strategyName.endsWith("_US");
+
+        for (StrategyDetailDTO s : list) {
+
+            if (isKR) {
+                s.setPrice( floor0(s.getPrice()) );
+                s.setPrevClose( floor0(s.getPrevClose()) );
+                s.setDiff( floor0(s.getDiff()) );
+            }
+            else if (isUS) {
+                s.setPrice( floor2(s.getPrice()) );
+                s.setPrevClose( floor2(s.getPrevClose()) );
+                s.setDiff( floor2(s.getDiff()) );
+            }
+        }
+
+        return list;
+    }
+
+    private Double floor0(Double v) {
+        if (v == null) return null;
+        return Math.floor(v);
+    }
+
+    private Double floor2(Double v) {
+        if (v == null) return null;
+        return Math.floor(v * 100) / 100.0;
+    }
+
+
+
 
 
 
@@ -72,7 +105,7 @@ public class StrategyDetailService {
         return detailRepository.findByKeyword(keyword);
     }
 
-    public List<StrategyDetailDTO> getDetail(String strategy, String date) {
+    public List<StrategyDetailDTO> getDetail(String strategy, LocalDate date) {
         return detailRepository
                 .findByActionAndSignalDateOrderBySpecialValueAsc(strategy, date)
                 .stream()

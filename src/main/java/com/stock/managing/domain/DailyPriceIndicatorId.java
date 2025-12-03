@@ -3,6 +3,7 @@ package com.stock.managing.domain;
 import lombok.*;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -10,6 +11,6 @@ import java.io.Serializable;
 @AllArgsConstructor
 public class DailyPriceIndicatorId implements Serializable {
 
-    private String date;
+    private LocalDate date;
     private String code;
 }

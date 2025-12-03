@@ -93,7 +93,6 @@
           <th th:text="${priceLabel}">전일종가</th>
           <th>등락률</th>
           <th>거래량</th>
-          <th th:text="${captureName}">포착값</th>
           <th>포착시간</th>
         </tr>
         </thead>
@@ -108,7 +107,6 @@
                                    th:data-name="${dto.name}"
                                    th:data-price="${dto.price}"
                                    th:data-strategy="${strategy}"
-                                   th:data-special="${dto.specialValue}"
                                    th:data-date="${dto.signalDate}" />
                         </span>
           </td>
@@ -116,15 +114,13 @@
           <td th:text="${dto.code}"></td>
           <td th:text="${dto.name}"></td>
 
-          <td th:text="${#numbers.formatInteger(dto.price, 1, 'COMMA') + ' $'}"></td>
-          <td th:text="${#numbers.formatInteger(dto.prevClose, 1, 'COMMA') + ' $'}"></td>
-
+          <td th:text="${dto.price + '$'}"></td>
+          <td th:text="${dto.prevClose + '$'}"></td>
           <td th:text="${dto.diff + '%'}"
               th:style="${dto.diff >= 0} ? 'color:red;' : 'color:blue;'"></td>
 
           <td th:text="${#numbers.formatInteger(dto.volume, 1, 'COMMA')}"></td>
 
-          <td th:text="${dto.specialValue}"></td>
           <td th:text="${dto.createdAt}"></td>
         </tr>
         </tbody>

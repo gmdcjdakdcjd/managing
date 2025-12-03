@@ -2,6 +2,9 @@ package com.stock.managing.dto;
 
 import lombok.*;
 
+import java.sql.Date;
+import java.time.LocalDate;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -10,8 +13,8 @@ import lombok.*;
 public class StrategyResultDTO {
 
     private String strategyName;
-    private String signalDate;
+    private LocalDate signalDate;
     private String signalType;
     private Integer totalData;
-    private String createdAt;
+    private Date createdAt;
 }

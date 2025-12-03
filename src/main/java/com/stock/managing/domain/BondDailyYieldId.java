@@ -2,6 +2,7 @@ package com.stock.managing.domain;
 
 import lombok.*;
 import java.io.Serializable;
+import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -10,5 +11,5 @@ import java.io.Serializable;
 public class BondDailyYieldId implements Serializable {
 
     private String code;
-    private String date;
+    private LocalDate date;
 }

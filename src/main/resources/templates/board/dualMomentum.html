@@ -90,12 +90,24 @@
 
                     <!-- 한국/미국 가격 단위 자동 -->
                     <td class="col-price"
-                        th:text="${isKr ? dto.price + '원' : dto.price + '$'}"></td>
+                        th:text="${isKr
+        ? #numbers.formatInteger(dto.price, 0, 'COMMA') + '원'
+        : ('$' + dto.price)}">
+                    </td>
 
                     <td class="col-prev"
-                        th:text="${isKr ? dto.prevClose + '원' : dto.prevClose + '$'}"></td>
+                        th:text="${isKr
+        ? #numbers.formatInteger(dto.prevClose, 0, 'COMMA') + '원'
+        : ('$' + dto.prevClose)}">
+                    </td>
 
-                    <td class="col-diff" th:text="${dto.diff + '%'}"></td>
+
+                    <td class="col-diff"
+                        th:text="${isKr
+        ? (#numbers.formatInteger(dto.diff, 0, 'COMMA') + '%')
+        : (dto.diff + '%')}">
+                    </td>
+
                     <td class="col-date" th:text="${dto.signalDate}"></td>
                 </tr>
                 </tbody>

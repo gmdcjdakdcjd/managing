@@ -9,4 +9,7 @@ import java.util.List;
 @Repository
 public interface VCompanyInfoUsRepository extends JpaRepository<VCompanyInfoUs, String> {
     List<VCompanyInfoUs> findByNameContaining(String name);
+
+    List<VCompanyInfoUs> findTop10ByNameContainingOrCodeContaining(String name, String code);
+
 }

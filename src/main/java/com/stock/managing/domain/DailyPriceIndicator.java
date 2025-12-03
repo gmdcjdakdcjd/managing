@@ -3,6 +3,8 @@ package com.stock.managing.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Entity
 @Table(name = "daily_price_indicator")
 @Getter
@@ -15,7 +17,7 @@ public class DailyPriceIndicator {
 
     @Id
     @Column(name = "date", nullable = false)
-    private String date;   // yyyy-MM-dd (DATE지만 String으로 저장 가능)
+    private LocalDate date;   // yyyy-MM-dd (DATE지만 String으로 저장 가능)
 
     @Id
     @Column(name = "code", nullable = false, length = 50)

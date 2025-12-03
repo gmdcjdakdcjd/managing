@@ -2,6 +2,8 @@ package com.stock.managing.dto;
 
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -9,7 +11,7 @@ import lombok.*;
 @Builder
 public class MarketIndicatorDTO {
 
-    private String date;         // yyyy-MM-dd
+    private LocalDate date;         // yyyy-MM-dd
     private String code;         // 종목 코드
     private Double close;
     private Double changeAmount;

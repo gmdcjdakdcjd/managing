@@ -3,6 +3,8 @@ package com.stock.managing.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Entity
 @Table(name = "bond_daily_price")
 @Getter
@@ -19,7 +21,7 @@ public class BondDailyYield {
 
     @Id
     @Column(name = "date", nullable = false)
-    private String date;   // yyyy-MM-dd로 저장한다고 했으니까 String 유지
+    private LocalDate date;   // yyyy-MM-dd로 저장한다고 했으니까 String 유지
 
     @Column(name = "open")
     private Double open;
