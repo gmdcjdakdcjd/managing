@@ -4,6 +4,7 @@ import com.stock.managing.domain.StrategyResult;
 import com.stock.managing.dto.PageRequestDTO;
 import com.stock.managing.dto.PageResponseDTO;
 import com.stock.managing.dto.StrategyResultDTO;
+import com.stock.managing.enums.StrategyCode;
 import com.stock.managing.repository.StrategyResultRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -11,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -64,8 +66,8 @@ public class StrategyResultService {
 
         Pageable pageable = dto.getPageable("signalDate");
 
-        // 허용된 KR 전략만
-        List<String> allowedKR = getKRStrategyList();
+        // 🔥 Enum 기반으로 허용 전략 생성
+        List<String> allowedKR = getKRStrategyCodes();
 
         Page<StrategyResult> resultPage =
                 resultRepository.findAllowedKR(
@@ -94,7 +96,8 @@ public class StrategyResultService {
 
         Pageable pageable = dto.getPageable("signalDate");
 
-        List<String> allowedUS = getUSStrategyList(); // ← 수정됨
+        // 🔥 Enum 기반으로 허용 전략 생성
+        List<String> allowedUS = getUSStrategyCodes();
 
         Page<StrategyResult> resultPage =
                 resultRepository.findAllowedUS(
@@ -114,6 +117,23 @@ public class StrategyResultService {
                 .total((int) resultPage.getTotalElements())
                 .build();
     }
+
+
+    public List<String> getKRStrategyCodes() {
+        return Arrays.stream(StrategyCode.values())
+                .filter(s -> s.getMarket().equals("KR"))
+                .map(StrategyCode::getCode)
+                .toList();
+    }
+
+    public List<String> getUSStrategyCodes() {
+        return Arrays.stream(StrategyCode.values())
+                .filter(s -> s.getMarket().equals("US"))
+                .map(StrategyCode::getCode)
+                .toList();
+    }
+
+
 
 
     // ============================

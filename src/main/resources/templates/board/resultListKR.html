@@ -29,9 +29,9 @@
                     <select name="strategy" class="form-select">
                         <option value="">전체</option>
                         <option th:each="s : ${strategyList}"
-                                th:value="${s}"
-                                th:text="${s}"
-                                th:selected="${strategy == s}">
+                                th:value="${s.code}"
+                                th:text="${s.label}"
+                                th:selected="${strategy == s.code}">
                         </option>
                     </select>
                 </div>
@@ -102,7 +102,8 @@
                     th:data-date="${dto.signalDate}"
                     style="cursor:pointer;">
 
-                    <td th:text="${dto.strategyName}"></td>
+                    <td th:text="${T(com.stock.managing.enums.StrategyCode).findByCode(dto.strategyName).label}"></td>
+
                     <td th:text="${dto.signalDate}"></td>
                     <td th:text="${dto.totalData}"></td>
                     <td th:text="${dto.createdAt}"></td>

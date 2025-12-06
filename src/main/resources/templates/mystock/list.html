@@ -20,6 +20,32 @@
             vertical-align: middle;
             font-size: 0.92rem;
         }
+
+        .profit-row {
+            background-color: #ffecec !important;
+        }
+        .loss-row {
+            background-color: #e8f2ff !important;
+        }
+
+        /* 행 전체 (연한 배경색) */
+        .profit-row {
+            background-color: #ffecec;   /* 연한 빨강 */
+        }
+        .loss-row {
+            background-color: #e8f1ff;   /* 연한 파랑 */
+        }
+
+        /* 현재가 텍스트 강조 */
+        .price-up {
+            color: #d60000;   /* 진빨강 */
+            font-weight: 600;
+        }
+        .price-down {
+            color: #0049b7;   /* 진파랑 */
+            font-weight: 600;
+        }
+
     </style>
 </head>
 
@@ -58,34 +84,36 @@
                 </thead>
 
                 <tbody>
-                <tr th:each="s, idx : ${krList}">
+                <tr th:each="s, idx : ${krList}"
+                    th:classappend="${s.currentPrice > s.priceAtAdd} ? 'profit-row' : 'loss-row'">
+
                     <td th:text="${idx.index + 1}"></td>
                     <td th:text="${s.code}"></td>
                     <td th:text="${s.name}"></td>
 
-                    <!-- 현재가 -->
-                    <td th:text="${#numbers.formatInteger(s.currentPrice, 0, 'COMMA') + ' 원'}"></td>
+                    <!-- 현재가만 진하게 빨강/파랑 표시 -->
+                    <td th:text="${#numbers.formatInteger(s.currentPrice, 0, 'COMMA') + ' 원'}"
+                        th:classappend="${s.currentPrice > s.priceAtAdd} ? 'price-up' : 'price-down'"></td>
+
                     <td th:text="${#numbers.formatInteger(s.priceAtAdd, 0, 'COMMA') + ' 원'}"></td>
                     <td th:text="${#numbers.formatInteger(s.targetPrice5, 0, 'COMMA') + ' 원'}"></td>
                     <td th:text="${#numbers.formatInteger(s.targetPrice10, 0, 'COMMA') + ' 원'}"></td>
 
                     <td>
-                        <span th:text="${s.strategyName}"></span>
-                        <a th:href="@{'/board/detailKR'(strategy=${s.strategyName}, date=${s.memo})}">
-                            🔍
-                        </a>
+                        <span th:text="${T(com.stock.managing.enums.StrategyCode).findByCode(s.strategyName).label}"></span>
+                        <a th:href="@{'/board/detailKR'(strategy=${s.strategyName}, date=${s.memo})}">🔍</a>
                     </td>
 
                     <td th:text="${#temporals.format(s.createdAt, 'yyyy-MM-dd')}"></td>
 
                     <td>
                         <button class="btn btn-sm btn-outline-danger"
-                                th:onclick="'deleteMyStock(' + ${s.id} + ')'">
-                            삭제
-                        </button>
+                                th:onclick="'deleteMyStock(' + ${s.id} + ')'">삭제</button>
                     </td>
                 </tr>
                 </tbody>
+
+
             </table>
         </div>
     </div>
@@ -112,35 +140,36 @@
                 </thead>
 
                 <tbody>
-                <tr th:each="s, idx : ${usList}">
+                <tr th:each="s, idx : ${usList}"
+                    th:classappend="${s.currentPrice > s.priceAtAdd} ? 'profit-row' : 'loss-row'">
+
                     <td th:text="${idx.index + 1}"></td>
                     <td th:text="${s.code}"></td>
                     <td th:text="${s.name}"></td>
 
-                    <!-- 현재가 -->
-                    <td th:text="${s.currentPrice + ' $'}"></td>
+                    <!-- 현재가 → 빨강/파랑 강조 -->
+                    <td th:text="${s.currentPrice + ' $'}"
+                        th:classappend="${s.currentPrice > s.priceAtAdd} ? 'price-up' : 'price-down'"></td>
+
                     <td th:text="${s.priceAtAdd + ' $'}"></td>
                     <td th:text="${s.targetPrice5 + ' $'}"></td>
                     <td th:text="${s.targetPrice10 + ' $'}"></td>
 
-
                     <td>
-                        <span th:text="${s.strategyName}"></span>
-                        <a th:href="@{'/board/detailUS'(strategy=${s.strategyName}, date=${s.memo})}">
-                            🔍
-                        </a>
+                        <span th:text="${T(com.stock.managing.enums.StrategyCode).findByCode(s.strategyName).label}"></span>
+                        <a th:href="@{'/board/detailUS'(strategy=${s.strategyName}, date=${s.memo})}">🔍</a>
                     </td>
 
                     <td th:text="${#temporals.format(s.createdAt, 'yyyy-MM-dd')}"></td>
 
                     <td>
                         <button class="btn btn-sm btn-outline-danger"
-                                th:onclick="'deleteMyStock(' + ${s.id} + ')'">
-                            삭제
-                        </button>
+                                th:onclick="'deleteMyStock(' + ${s.id} + ')'">삭제</button>
                     </td>
                 </tr>
                 </tbody>
+
+
             </table>
         </div>
     </div>

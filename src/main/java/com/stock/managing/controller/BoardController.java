@@ -5,6 +5,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.stock.managing.domain.BondDailyYield;
 import com.stock.managing.dto.*;
 import com.stock.managing.enums.KRStrategy;
+import com.stock.managing.enums.StrategyCode;
 import com.stock.managing.enums.USStrategy;
 import com.stock.managing.service.*;
 import org.springframework.beans.factory.annotation.Value;
@@ -201,8 +202,15 @@ public class BoardController {
 
 
         // 📌 전략명 리스트 — 고정된 KR 전략만
-        List<String> strategyList = strategyResultService.getKRStrategyList();
-        model.addAttribute("strategyList", strategyList);
+        //List<String> strategyList = strategyResultService.getKRStrategyList();
+        // model.addAttribute("strategyList", strategyList);
+
+        model.addAttribute("strategyList",
+                Arrays.stream(StrategyCode.values())
+                        .filter(s -> s.getMarket().equals("KR"))
+                        .toList());
+
+
 
         // 📌 필터링된 결과 조회
         PageResponseDTO<StrategyResultDTO> responseDTO =
@@ -255,8 +263,12 @@ public class BoardController {
         model.addAttribute("responseDTO", responseDTO);*/
 
         // 📌 전략명 리스트 — 고정된 US 전략만
-        List<String> strategyList = strategyResultService.getUSStrategyList();
-        model.addAttribute("strategyList", strategyList);
+        // List<String> strategyList = strategyResultService.getUSStrategyList();
+        // model.addAttribute("strategyList", strategyList);
+        model.addAttribute("strategyList",
+                Arrays.stream(StrategyCode.values())
+                        .filter(s -> s.getMarket().equals("US"))
+                        .toList());
 
         // 📌 필터링된 결과 조회
         PageResponseDTO<StrategyResultDTO> responseDTO =

@@ -41,7 +41,7 @@
 
         <div class="header-info">
             <span class="fw-semibold">전략명: </span>
-            <span th:text="${strategy}"></span>
+            <span th:text="${T(com.stock.managing.enums.StrategyCode).findByCode(strategy).label}"></span>
         </div>
 
         <div class="header-info">
