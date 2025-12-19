@@ -144,34 +144,36 @@
 
                         <!-- 종가 -->
                         <td th:text="${
-        (stock.marketType == 'KOSPI' or stock.marketType == 'KOSDAQ')
-            ? row.close + '원'
-            : '$' + row.close
-    }"></td>
+                            (stock.marketType == 'KOSPI' or stock.marketType == 'KOSDAQ')
+                                ? #numbers.formatInteger(row.close, 0, 'COMMA') + '원'
+                                : '$' + row.close
+                        }"></td>
+
 
                         <!-- 거래량 -->
                         <td th:text="${#numbers.formatInteger(row.volume, 0, 'COMMA')}"></td>
 
                         <!-- 시가 -->
                         <td th:text="${
-        (stock.marketType == 'KOSPI' or stock.marketType == 'KOSDAQ')
-            ? row.open + '원'
-            : '$' + row.open
-    }"></td>
+                            (stock.marketType == 'KOSPI' or stock.marketType == 'KOSDAQ')
+                                ? #numbers.formatInteger(row.open, 0, 'COMMA') + '원'
+                                : '$' + row.open
+                        }"></td>
 
                         <!-- 고가 -->
                         <td th:text="${
-        (stock.marketType == 'KOSPI' or stock.marketType == 'KOSDAQ')
-            ? row.high + '원'
-            : '$' + row.high
-    }"></td>
+                            (stock.marketType == 'KOSPI' or stock.marketType == 'KOSDAQ')
+                                ? #numbers.formatInteger(row.high, 0, 'COMMA') + '원'
+                                : '$' + row.high
+                        }"></td>
 
                         <!-- 저가 -->
                         <td th:text="${
-        (stock.marketType == 'KOSPI' or stock.marketType == 'KOSDAQ')
-            ? row.low + '원'
-            : '$' + row.low
-    }"></td>
+                            (stock.marketType == 'KOSPI' or stock.marketType == 'KOSDAQ')
+                                ? #numbers.formatInteger(row.low, 0, 'COMMA') + '원'
+                                : '$' + row.low
+                        }"></td>
+
 
                     </tr>
                     </tbody>

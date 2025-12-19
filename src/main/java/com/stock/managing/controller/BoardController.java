@@ -49,6 +49,7 @@ public class BoardController {
     private final StrategyDetailService strategyDetailService;
     private final StrategyResultService strategyResultService;
     private final AutocompleteService autocompleteService;
+    private final KodexEtfHoldingsService kodexEtfHoldingsService;
 
     @Value("${com.stock.upload.path}")
     private String uploadPath;
@@ -555,6 +556,19 @@ public class BoardController {
                     .toList();
 
             model.addAttribute("priceList", safeList);
+
+            boolean isKR = "KOSPI".equals(stockInfo.getMarketType())
+                    || "KOSDAQ".equals(stockInfo.getMarketType());
+
+            if (isKR) {
+                List<KodexEtfHoldingsDto> etfListByStock =
+                        kodexEtfHoldingsService.getEtfsByStock(
+                                stockInfo.getCode(),
+                                stockInfo.getName()
+                        );
+
+                model.addAttribute("etfListByStock", etfListByStock);
+            }
 
         }
 

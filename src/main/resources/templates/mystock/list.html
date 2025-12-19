@@ -30,21 +30,34 @@
 
         /* 행 전체 (연한 배경색) */
         .profit-row {
-            background-color: #ffecec;   /* 연한 빨강 */
+            background-color: #ffe5e5; /* 옅은 빨강 */
         }
+
         .loss-row {
-            background-color: #e8f1ff;   /* 연한 파랑 */
+            background-color: #e8f0ff; /* 옅은 파랑 */
         }
+
+        .same-row {
+            background-color: #f2f2f2; /* 옅은 회색 */
+        }
+
 
         /* 현재가 텍스트 강조 */
         .price-up {
-            color: #d60000;   /* 진빨강 */
+            color: #d60000;
             font-weight: 600;
         }
+
         .price-down {
-            color: #0049b7;   /* 진파랑 */
+            color: #0049b7;
             font-weight: 600;
         }
+
+        .price-same {
+            color: #777;
+            font-weight: 600;
+        }
+
 
     </style>
 </head>
@@ -85,15 +98,23 @@
 
                 <tbody>
                 <tr th:each="s, idx : ${krList}"
-                    th:classappend="${s.currentPrice > s.priceAtAdd} ? 'profit-row' : 'loss-row'">
+                    th:classappend="${
+                    s.currentPrice > s.priceAtAdd ? 'profit-row' :
+                    (s.currentPrice < s.priceAtAdd ? 'loss-row' : '')
+                }">
+
 
                     <td th:text="${idx.index + 1}"></td>
                     <td th:text="${s.code}"></td>
                     <td th:text="${s.name}"></td>
 
-                    <!-- 현재가만 진하게 빨강/파랑 표시 -->
+                    <!-- 현재가 색상 강조 -->
                     <td th:text="${#numbers.formatInteger(s.currentPrice, 0, 'COMMA') + ' 원'}"
-                        th:classappend="${s.currentPrice > s.priceAtAdd} ? 'price-up' : 'price-down'"></td>
+                        th:classappend="${
+                        s.currentPrice > s.priceAtAdd ? 'price-up' :
+                        (s.currentPrice < s.priceAtAdd ? 'price-down' : '')
+                    }">
+                    </td>
 
                     <td th:text="${#numbers.formatInteger(s.priceAtAdd, 0, 'COMMA') + ' 원'}"></td>
                     <td th:text="${#numbers.formatInteger(s.targetPrice5, 0, 'COMMA') + ' 원'}"></td>
@@ -110,10 +131,9 @@
                         <button class="btn btn-sm btn-outline-danger"
                                 th:onclick="'deleteMyStock(' + ${s.id} + ')'">삭제</button>
                     </td>
+
                 </tr>
                 </tbody>
-
-
             </table>
         </div>
     </div>
@@ -141,15 +161,24 @@
 
                 <tbody>
                 <tr th:each="s, idx : ${usList}"
-                    th:classappend="${s.currentPrice > s.priceAtAdd} ? 'profit-row' : 'loss-row'">
+                    th:classappend="${
+                    s.currentPrice > s.priceAtAdd ? 'profit-row' :
+                    (s.currentPrice < s.priceAtAdd ? 'loss-row' : '')
+                }">
 
-                    <td th:text="${idx.index + 1}"></td>
+
+                <td th:text="${idx.index + 1}"></td>
                     <td th:text="${s.code}"></td>
                     <td th:text="${s.name}"></td>
 
                     <!-- 현재가 → 빨강/파랑 강조 -->
                     <td th:text="${s.currentPrice + ' $'}"
-                        th:classappend="${s.currentPrice > s.priceAtAdd} ? 'price-up' : 'price-down'"></td>
+                            th:classappend="${
+                            s.currentPrice > s.priceAtAdd ? 'price-up' :
+                            (s.currentPrice < s.priceAtAdd ? 'price-down' : '')
+                        }">
+                    </td>
+
 
                     <td th:text="${s.priceAtAdd + ' $'}"></td>
                     <td th:text="${s.targetPrice5 + ' $'}"></td>
