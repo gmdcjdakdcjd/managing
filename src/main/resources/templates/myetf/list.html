@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/basic.html}">
+
+<body>
+<div layout:fragment="content" class="container mt-4" style="max-width:1200px;">
+
+  <!-- 제목 + 버튼 -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold mb-0">내가 만든 ETF</h3>
+
+    <button class="btn btn-primary"
+            data-bs-toggle="modal"
+            data-bs-target="#createEtfModal">
+      ETF 만들기
+    </button>
+  </div>
+
+  <!-- ETF 리스트 -->
+  <div class="card card-box">
+    <table class="table table-hover text-center">
+      <thead class="table-light">
+      <tr>
+        <th>No</th>
+        <th>ETF 이름</th>
+        <th>종목 수</th>
+        <th>투자금</th>
+        <th>평가금</th>
+        <th>수익률</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="e, idx : ${etfList}"
+          th:onclick="|location.href='@{/myetf/detail(etfName=${e.etfName})}'|"
+          style="cursor:pointer">
+        <td th:text="${idx.index + 1}"></td>
+        <td th:text="${e.etfName}"></td>
+        <td th:text="${e.itemCount}"></td>
+        <td th:text="${#numbers.formatInteger(e.investedAmount,0,'COMMA')}"></td>
+        <td th:text="${#numbers.formatInteger(e.evaluatedAmount,0,'COMMA')}"></td>
+        <td th:text="${#numbers.formatDecimal(e.profitRate,1,2)} + '%'"
+            th:classappend="
+        ${e.evaluatedAmount > e.investedAmount} ? 'text-danger' :
+        (${e.evaluatedAmount < e.investedAmount} ? 'text-primary' : '')
+    ">
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- =========================
+       ETF 생성 모달
+       ========================= -->
+  <div class="modal fade" id="createEtfModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+
+        <div class="modal-header">
+          <h5 class="modal-title">나만의 ETF 만들기</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+
+          <!-- ETF 기본 정보 -->
+          <div class="mb-3">
+            <label class="form-label fw-bold">ETF 이름</label>
+            <input type="text" id="etfName" class="form-control">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold">ETF 설명</label>
+            <textarea id="etfDescription" class="form-control" rows="2"></textarea>
+          </div>
+
+          <hr/>
+
+          <!-- 통합 검색 -->
+          <h6 class="fw-bold mb-2">종목 검색</h6>
+
+          <div class="mb-3">
+            <input type="text"
+                   id="searchKeyword"
+                   class="form-control"
+                   placeholder="종목명 또는 종목코드 (예: 삼성전자, 005930, AAPL)">
+          </div>
+
+          <!-- 검색 결과 -->
+          <div style="max-height:200px; overflow-y:auto; border:1px solid #dee2e6;">
+            <table class="table table-sm text-center mb-0">
+              <thead class="table-light" style="position:sticky; top:0; z-index:1;">
+              <tr>
+                <th>종목명</th>
+                <th>종목코드</th>
+                <th>추가</th>
+              </tr>
+              </thead>
+              <tbody id="searchResultBody"></tbody>
+            </table>
+          </div>
+
+          <hr/>
+
+          <!-- 구성 종목 -->
+          <h6 class="fw-bold mb-2">구성 종목</h6>
+
+          <table class="table table-sm text-center">
+            <thead class="table-light">
+            <tr>
+              <th>No</th>
+              <th>종목명</th>
+              <th>종목코드</th>
+              <th>수량</th>
+              <th>삭제</th>
+            </tr>
+            </thead>
+            <tbody id="tempItemBody"></tbody>
+          </table>
+
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+          <button class="btn btn-primary" onclick="saveEtf()">ETF 생성</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- =========================
+     Script
+     ========================= -->
+<th:block layout:fragment="script">
+  <script th:inline="javascript">
+    let tempItems = [];
+    const BASE = "/board";
+
+    document.getElementById("searchKeyword").addEventListener("keyup", function () {
+      const q = this.value.trim();
+      if (q.length < 1) {
+        document.getElementById("searchResultBody").innerHTML = "";
+        return;
+      }
+
+      fetch(`${BASE}/autocomplete?q=${encodeURIComponent(q)}`)
+              .then(res => res.json())
+              .then(renderSearchResult);
+    });
+
+    function renderSearchResult(list) {
+      const body = document.getElementById("searchResultBody");
+      body.innerHTML = "";
+
+      if (!list || list.length === 0) {
+        body.innerHTML = `
+          <tr>
+            <td colspan="3" class="text-muted">검색 결과가 없습니다</td>
+          </tr>`;
+        return;
+      }
+
+      list.forEach(item => {
+        body.innerHTML += `
+          <tr>
+            <td>${item.name}</td>
+            <td>${item.code}</td>
+            <td>
+              <button class="btn btn-sm btn-outline-success"
+                      onclick="addTempItem('${item.code}','${item.name}')">
+                추가
+              </button>
+            </td>
+          </tr>`;
+      });
+    }
+
+    function addTempItem(code, name) {
+      const exist = tempItems.find(i => i.code === code);
+      if (exist) {
+        exist.quantity++;
+      } else {
+        tempItems.push({ code, name, quantity: 1 });
+      }
+      renderTempItems();
+    }
+
+    function removeTempItem(idx) {
+      tempItems.splice(idx, 1);
+      renderTempItems();
+    }
+
+    function renderTempItems() {
+      const body = document.getElementById("tempItemBody");
+      body.innerHTML = "";
+
+      tempItems.forEach((item, idx) => {
+        body.innerHTML += `
+          <tr>
+            <td>${idx + 1}</td>
+            <td>${item.name}</td>
+            <td>${item.code}</td>
+            <td>
+              <input type="number" min="1" value="${item.quantity}"
+                     onchange="tempItems[${idx}].quantity=this.value">
+            </td>
+            <td>
+              <button class="btn btn-sm btn-outline-danger"
+                      onclick="removeTempItem(${idx})">
+                삭제
+              </button>
+            </td>
+          </tr>`;
+      });
+    }
+
+    function saveEtf() {
+      const etfName = document.getElementById("etfName").value.trim();
+      const etfDescription = document.getElementById("etfDescription").value.trim();
+
+      if (!etfName || tempItems.length === 0) return;
+
+      fetch("/myetf/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          etfName,
+          etfDescription,
+          items: tempItems
+        })
+      }).then(res => {
+        if (!res.ok) throw new Error();
+        location.reload();
+      });
+    }
+  </script>
+</th:block>
+
+</body>
+</html>

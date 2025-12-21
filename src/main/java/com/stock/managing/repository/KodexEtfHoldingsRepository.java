@@ -27,16 +27,16 @@ public interface KodexEtfHoldingsRepository
 
     // 종목 → ETF (종목 검색 화면)
     @Query("""
-    SELECT h
-    FROM KodexEtfHoldings h
-    WHERE 
-        (:stockCode IS NOT NULL AND h.id.stockCode = :stockCode)
-        OR
-        (:stockName IS NOT NULL AND h.stockName LIKE %:stockName%)
-    ORDER BY 
-        CASE WHEN h.weightRatio IS NULL THEN 0 ELSE 1 END ASC,
-        h.weightRatio DESC
-""")
+                SELECT h
+                FROM KodexEtfHoldings h
+                WHERE 
+                    (:stockCode IS NOT NULL AND h.id.stockCode = :stockCode)
+                    OR
+                    (:stockName IS NOT NULL AND h.stockName LIKE %:stockName%)
+                ORDER BY 
+                    CASE WHEN h.weightRatio IS NULL THEN 0 ELSE 1 END ASC,
+                    h.weightRatio DESC
+            """)
     List<KodexEtfHoldings> findEtfsByStock(
             @Param("stockCode") String stockCode,
             @Param("stockName") String stockName

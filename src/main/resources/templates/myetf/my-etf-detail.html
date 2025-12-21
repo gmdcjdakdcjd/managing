@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/basic.html}">
+
+<body>
+<div layout:fragment="content"
+     class="container mt-4"
+     style="max-width:1200px;">
+
+  <!-- =========================
+       ETF 헤더 영역
+       ========================= -->
+  <div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+      <h3 class="fw-bold mb-1" th:text="${etfName}">ETF 이름</h3>
+
+      <div th:if="${etfDescription != null and !#strings.isEmpty(etfDescription)}"
+           class="px-3 py-2 mt-2"
+           style="background:#f8f9fa;border-left:4px solid #0d6efd;
+              border-radius:4px;font-size:0.9rem;color:#555;">
+        <span th:text="${etfDescription}">ETF 설명</span>
+      </div>
+
+      <div class="mt-2">
+        <button class="btn btn-sm btn-outline-secondary" onclick="goBack()">
+          ← 이전 화면 가기
+        </button>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-1">
+      <button class="btn btn-outline-primary btn-sm"
+              data-bs-toggle="modal"
+              data-bs-target="#editEtfModal">
+        종목 편집
+      </button>
+
+      <button class="btn btn-outline-secondary btn-sm"
+              onclick="openRestoreModal()">
+        종목 복구
+      </button>
+    </div>
+  </div>
+  <!-- =========================
+      🔥 ETF 요약 영역
+      ========================= -->
+  <div class="card mb-3">
+    <div class="card-body py-3">
+      <div class="row text-center">
+
+        <div class="col">
+          <div class="text-muted small">총 편입금액</div>
+          <div class="fw-bold"
+               th:text="${#numbers.formatInteger(summary.totalInvested,0,'COMMA')} + '원'">
+            0원
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="text-muted small">현재 평가액</div>
+          <div class="fw-bold"
+               th:text="${#numbers.formatInteger(summary.totalEvaluated,0,'COMMA')} + '원'">
+            0원
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="text-muted small">수익금</div>
+          <div class="fw-bold"
+               th:classappend="
+        ${summary.totalEvaluated > summary.totalInvested} ? 'text-danger' :
+        (${summary.totalEvaluated < summary.totalInvested} ? 'text-primary' : '')
+     "
+               th:text="${#numbers.formatInteger(summary.profitAmount,0,'COMMA')} + '원'">
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="text-muted small">수익률</div>
+          <div class="fw-bold"
+               th:classappend="
+        ${summary.totalEvaluated > summary.totalInvested} ? 'text-danger' :
+        (${summary.totalEvaluated < summary.totalInvested} ? 'text-primary' : '')
+     "
+               th:text="${#numbers.formatDecimal(summary.profitRate,1,2)} + '%'">
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- =========================
+       ETF 구성 종목
+       ========================= -->
+  <div class="card card-box">
+    <div class="card-header bg-white fw-bold">구성 종목</div>
+
+    <div class="card-body p-0">
+      <table class="table table-hover text-center mb-0">
+        <thead class="table-light">
+        <tr>
+          <th style="width:60px;">No</th>
+          <th>종목코드</th>
+          <th>종목명</th>
+          <th>수량</th>
+          <th>편입가</th>
+          <th>현재가</th>
+          <th>평가금액</th>
+          <th>수익률</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="s, idx : ${itemList}">
+          <td th:text="${idx.index + 1}"></td>
+          <td th:text="${s.code}"></td>
+          <td th:text="${s.name}"></td>
+          <td th:text="${s.quantity}"></td>
+          <td th:text="${s.priceAtAddDisplay}"></td>
+          <td th:text="${s.currentPriceDisplay}"></td>
+          <td th:text="${s.evaluatedAmountDisplay}"></td>
+          <td th:text="${s.profitRateDisplay}"
+              th:classappend="
+                              ${s.evaluatedAmount > (s.priceAtAdd * s.quantity)} ? 'text-danger' :
+                              (${s.evaluatedAmount < (s.priceAtAdd * s.quantity)} ? 'text-primary' : '')
+                          ">
+          </td>
+
+
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- =========================
+       ETF 종목 편집 모달
+       ========================= -->
+  <div class="modal fade" id="editEtfModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+
+        <div class="modal-header">
+          <h5 class="modal-title">ETF 종목 편집</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+
+          <div class="mb-3">
+            <label class="form-label fw-bold">ETF 이름</label>
+            <input type="text" class="form-control"
+                   th:value="${etfName}" readonly>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold">ETF 설명</label>
+            <textarea class="form-control" rows="2"
+                      readonly th:text="${etfDescription}"></textarea>
+          </div>
+
+          <hr/>
+
+          <h6 class="fw-bold mb-2">종목 검색</h6>
+          <div class="mb-3">
+            <input type="text" id="searchKeyword" class="form-control"
+                   placeholder="종목명 또는 종목코드">
+          </div>
+
+          <div style="max-height:200px; overflow-y:auto; border:1px solid #dee2e6;">
+            <table class="table table-sm text-center mb-0">
+              <thead class="table-light" style="position:sticky; top:0;">
+              <tr>
+                <th>종목명</th>
+                <th>종목코드</th>
+                <th>추가</th>
+              </tr>
+              </thead>
+              <tbody id="searchResultBody"></tbody>
+            </table>
+          </div>
+
+          <hr/>
+
+          <h6 class="fw-bold mb-2">구성 종목</h6>
+          <table class="table table-sm text-center">
+            <thead class="table-light">
+            <tr>
+              <th>No</th>
+              <th>종목명</th>
+              <th>종목코드</th>
+              <th>수량</th>
+              <th>삭제</th>
+            </tr>
+            </thead>
+            <tbody id="tempItemBody"></tbody>
+          </table>
+
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+          <button class="btn btn-primary" onclick="saveEtfEdit()">저장</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================
+       ETF 종목 복구 모달
+       ========================= -->
+  <div class="modal fade" id="restoreEtfModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+
+        <div class="modal-header">
+          <h5 class="modal-title">삭제된 종목 복구</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <p class="small text-muted mb-3">
+            삭제된 종목 중 복구할 항목을 선택하세요.
+          </p>
+
+          <table class="table table-sm text-center">
+            <thead class="table-light">
+            <tr>
+              <th>No</th>
+              <th>종목명</th>
+              <th>종목코드</th>
+              <th>삭제일</th>
+              <th>복구</th>
+            </tr>
+            </thead>
+            <tbody id="restoreItemBody">
+            <tr>
+              <td colspan="5" class="text-muted">
+                복구 가능한 종목이 없습니다
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- =========================
+     Script
+     ========================= -->
+<th:block layout:fragment="script">
+  <script th:inline="javascript">
+    let tempItems = [];
+    const BASE = "/board";
+
+    /*<![CDATA[*/
+    tempItems = [[${itemList}]].map(i => ({
+      id: i.id,
+      code: i.code,
+      name: i.name,
+      quantity: i.quantity,
+      deleted: false
+    }));
+    /*]]>*/
+
+    renderTempItems();
+
+    document.getElementById("searchKeyword").addEventListener("keyup", function () {
+      const q = this.value.trim();
+      if (!q) return document.getElementById("searchResultBody").innerHTML = "";
+
+      fetch(`${BASE}/autocomplete?q=${encodeURIComponent(q)}`)
+              .then(res => res.json())
+              .then(renderSearchResult);
+    });
+
+    function renderSearchResult(list) {
+      const body = document.getElementById("searchResultBody");
+      body.innerHTML = list.length === 0
+              ? `<tr><td colspan="3" class="text-muted">검색 결과 없음</td></tr>`
+              : list.map(i => `
+        <tr>
+          <td>${i.name}</td>
+          <td>${i.code}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-success"
+                    onclick="addTempItem('${i.code}','${i.name}')">
+              추가
+            </button>
+          </td>
+        </tr>`).join("");
+    }
+
+    function addTempItem(code, name) {
+      const exist = tempItems.find(i => i.code === code && !i.deleted);
+      exist ? exist.quantity++ :
+              tempItems.push({ id:null, code, name, quantity:1, deleted:false });
+      renderTempItems();
+    }
+
+    function removeTempItem(idx) {
+      tempItems[idx].deleted = true;
+      renderTempItems();
+    }
+
+    function renderTempItems() {
+      const body = document.getElementById("tempItemBody");
+      body.innerHTML = "";
+
+      tempItems.forEach((i, realIdx) => {
+        if (i.deleted) return;
+
+        body.innerHTML += `
+      <tr>
+        <td>${realIdx + 1}</td>
+        <td>${i.name}</td>
+        <td>${i.code}</td>
+        <td>
+          <input type="number" min="1" value="${i.quantity}"
+                 onchange="tempItems[${realIdx}].quantity=this.value">
+        </td>
+        <td>
+          <button class="btn btn-sm btn-outline-danger"
+                  onclick="removeTempItem(${realIdx})">삭제</button>
+        </td>
+      </tr>`;
+      });
+    }
+
+
+    function saveEtfEdit() {
+      fetch("/myetf/edit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          etfName: /*[[${etfName}]]*/,
+          items: tempItems
+        })
+      }).then(res => {
+        if (!res.ok) throw new Error();
+        location.reload();
+      });
+    }
+
+    const etfName = /*[[${etfName}]]*/;
+
+    function openRestoreModal() {
+
+      fetch(`/myetf/history?etfName=${encodeURIComponent(etfName)}`)
+              .then(res => res.json())
+              .then(list => {
+
+                const body = document.getElementById("restoreItemBody");
+                body.innerHTML = "";
+
+                if (!list || list.length === 0) {
+                  body.innerHTML = `
+          <tr>
+            <td colspan="5" class="text-muted">
+              복구 가능한 종목이 없습니다
+            </td>
+          </tr>`;
+                } else {
+                  list.forEach((item, idx) => {
+                    body.innerHTML += `
+            <tr>
+              <td>${idx + 1}</td>
+              <td>${item.name}</td>
+              <td>${item.code}</td>
+              <td>${item.deletedAt.replace("T"," ")}</td>
+              <td>
+                <button class="btn btn-sm btn-outline-primary"
+                        onclick="restoreItem(${item.histId})">
+                  복구
+                </button>
+              </td>
+            </tr>`;
+                  });
+                }
+
+                new bootstrap.Modal(
+                        document.getElementById("restoreEtfModal")
+                ).show();
+              });
+    }
+
+
+    function restoreItem(histId) {
+      if (!confirm("이 종목을 복구하시겠습니까?")) return;
+
+      fetch("/myetf/restore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          historyIds: [histId]
+        })
+      })
+              .then(res => {
+                if (!res.ok) throw new Error();
+                alert("복구되었습니다");
+                location.reload();
+              });
+    }
+
+    function goBack() {
+      window.history.back();
+    }
+
+  </script>
+</th:block>
+
+</body>
+</html>
