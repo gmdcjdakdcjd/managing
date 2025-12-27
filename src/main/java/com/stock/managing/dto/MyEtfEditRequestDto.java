@@ -16,4 +16,7 @@ public class MyEtfEditRequestDto {
 
     /** 편집 대상 종목 목록 */
     private List<MyEtfEditItemDto> items;
+
+    /** ETF 설명 (메타 정보, 수정 가능) */
+    private String etfDescription;
 }

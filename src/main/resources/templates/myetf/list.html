@@ -25,26 +25,28 @@
         <th>No</th>
         <th>ETF 이름</th>
         <th>종목 수</th>
-        <th>투자금</th>
-        <th>평가금</th>
-        <th>수익률</th>
+        <th>삭제</th>
       </tr>
       </thead>
       <tbody>
       <tr th:each="e, idx : ${etfList}"
           th:onclick="|location.href='@{/myetf/detail(etfName=${e.etfName})}'|"
           style="cursor:pointer">
+
         <td th:text="${idx.index + 1}"></td>
         <td th:text="${e.etfName}"></td>
         <td th:text="${e.itemCount}"></td>
-        <td th:text="${#numbers.formatInteger(e.investedAmount,0,'COMMA')}"></td>
-        <td th:text="${#numbers.formatInteger(e.evaluatedAmount,0,'COMMA')}"></td>
-        <td th:text="${#numbers.formatDecimal(e.profitRate,1,2)} + '%'"
-            th:classappend="
-        ${e.evaluatedAmount > e.investedAmount} ? 'text-danger' :
-        (${e.evaluatedAmount < e.investedAmount} ? 'text-primary' : '')
-    ">
+
+        <td>
+          <!-- ✅ 핵심 수정 포인트 -->
+          <button class="btn btn-sm btn-outline-danger"
+                  th:data-etf-name="${e.etfName}"
+                  onclick="deleteEtf(event, this)">
+            삭제
+          </button>
+
         </td>
+
       </tr>
       </tbody>
     </table>
@@ -77,20 +79,19 @@
 
           <hr/>
 
-          <!-- 통합 검색 -->
+          <!-- 종목 검색 -->
           <h6 class="fw-bold mb-2">종목 검색</h6>
 
           <div class="mb-3">
             <input type="text"
                    id="searchKeyword"
                    class="form-control"
-                   placeholder="종목명 또는 종목코드 (예: 삼성전자, 005930, AAPL)">
+                   placeholder="종목명 또는 종목코드">
           </div>
 
-          <!-- 검색 결과 -->
           <div style="max-height:200px; overflow-y:auto; border:1px solid #dee2e6;">
             <table class="table table-sm text-center mb-0">
-              <thead class="table-light" style="position:sticky; top:0; z-index:1;">
+              <thead class="table-light" style="position:sticky; top:0;">
               <tr>
                 <th>종목명</th>
                 <th>종목코드</th>
@@ -137,6 +138,7 @@
      ========================= -->
 <th:block layout:fragment="script">
   <script th:inline="javascript">
+
     let tempItems = [];
     const BASE = "/board";
 
@@ -157,10 +159,7 @@
       body.innerHTML = "";
 
       if (!list || list.length === 0) {
-        body.innerHTML = `
-          <tr>
-            <td colspan="3" class="text-muted">검색 결과가 없습니다</td>
-          </tr>`;
+        body.innerHTML = `<tr><td colspan="3" class="text-muted">검색 결과 없음</td></tr>`;
         return;
       }
 
@@ -181,11 +180,8 @@
 
     function addTempItem(code, name) {
       const exist = tempItems.find(i => i.code === code);
-      if (exist) {
-        exist.quantity++;
-      } else {
-        tempItems.push({ code, name, quantity: 1 });
-      }
+      if (exist) exist.quantity++;
+      else tempItems.push({ code, name, quantity: 1 });
       renderTempItems();
     }
 
@@ -227,16 +223,34 @@
       fetch("/myetf/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          etfName,
-          etfDescription,
-          items: tempItems
-        })
+        body: JSON.stringify({ etfName, etfDescription, items: tempItems })
       }).then(res => {
         if (!res.ok) throw new Error();
         location.reload();
       });
     }
+
+    function deleteEtf(e, btn) {
+      e.stopPropagation();
+
+      const etfName = btn.dataset.etfName;
+      if (!etfName) {
+        alert("ETF 이름을 가져오지 못했습니다.");
+        return;
+      }
+
+      if (!confirm(`ETF [${etfName}] 를 삭제하시겠습니까?`)) return;
+
+      fetch("/myetf/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ etfName })
+      }).then(res => {
+        if (!res.ok) throw new Error();
+        location.reload();
+      });
+    }
+
   </script>
 </th:block>
 

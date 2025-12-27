@@ -17,6 +17,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequiredArgsConstructor
@@ -155,10 +156,6 @@ public class MyEtfController {
         return "myetf/my-etf-detail";
     }
 
-
-
-
-
     @PostMapping("/edit")
     @ResponseBody
     public ResponseEntity<?> editEtf(
@@ -195,9 +192,14 @@ public class MyEtfController {
         return ResponseEntity.ok().build();
     }
 
-
-
-
-
+    @PostMapping("/delete")
+    @ResponseBody
+    public ResponseEntity<?> deleteEtf(
+            @AuthenticationPrincipal User user,
+            @RequestBody Map<String, String> body
+    ) {
+        myEtfService.deleteEtf(user.getUsername(), body.get("etfName"));
+        return ResponseEntity.ok().build();
+    }
 
 }

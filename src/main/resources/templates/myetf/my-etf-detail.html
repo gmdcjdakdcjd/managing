@@ -3,6 +3,15 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/basic.html}">
 
+<style>
+  .table-danger {
+    --bs-table-bg: #fff5f5;
+  }
+
+  .table-primary {
+    --bs-table-bg: #f2f6ff;
+  }
+</style>
 <body>
 <div layout:fragment="content"
      class="container mt-4"
@@ -115,17 +124,22 @@
         </thead>
         <tbody>
         <tr th:each="s, idx : ${itemList}">
-          <td th:text="${idx.index + 1}"></td>
+        <td th:text="${idx.index + 1}"></td>
           <td th:text="${s.code}"></td>
           <td th:text="${s.name}"></td>
           <td th:text="${s.quantity}"></td>
           <td th:text="${s.priceAtAddDisplay}"></td>
-          <td th:text="${s.currentPriceDisplay}"></td>
+          <td th:text="${s.currentPriceDisplay}"
+              th:classappend="
+        ${s.evaluatedAmount > (s.priceAtAdd * s.quantity)} ? 'text-danger fw-bold' :
+        (${s.evaluatedAmount < (s.priceAtAdd * s.quantity)} ? 'text-primary fw-bold' : 'fw-bold')
+    ">
+          </td>
           <td th:text="${s.evaluatedAmountDisplay}"></td>
           <td th:text="${s.profitRateDisplay}"
               th:classappend="
-                              ${s.evaluatedAmount > (s.priceAtAdd * s.quantity)} ? 'text-danger' :
-                              (${s.evaluatedAmount < (s.priceAtAdd * s.quantity)} ? 'text-primary' : '')
+                              ${s.evaluatedAmount > (s.priceAtAdd * s.quantity)} ? 'text-danger fw-bold' :
+                              (${s.evaluatedAmount < (s.priceAtAdd * s.quantity)} ? 'text-primary fw-bold' : '')
                           ">
           </td>
 
@@ -159,7 +173,9 @@
           <div class="mb-3">
             <label class="form-label fw-bold">ETF 설명</label>
             <textarea class="form-control" rows="2"
-                      readonly th:text="${etfDescription}"></textarea>
+                      id="etfDescription"
+                      th:text="${etfDescription}"></textarea>
+
           </div>
 
           <hr/>
@@ -271,6 +287,7 @@
       code: i.code,
       name: i.name,
       quantity: i.quantity,
+      originalQuantity: i.quantity, // ⭐ 추가
       deleted: false
     }));
     /*]]>*/
@@ -339,22 +356,59 @@
       });
     }
 
+    const etfName = /*[[${etfName}]]*/;
 
     function saveEtfEdit() {
+
+      const invalidItems = tempItems.filter(i =>
+              i.id !== null &&               // 기존 종목
+              !i.deleted &&                  // 삭제 아님
+              Number(i.quantity) !== Number(i.originalQuantity)
+      );
+
+      if (invalidItems.length > 0) {
+
+        // 🔥 여기서 화면 값 되돌리기
+        invalidItems.forEach(i => {
+          i.quantity = i.originalQuantity;
+        });
+
+        // 🔄 화면 다시 그림
+        renderTempItems();
+
+        alert(
+                "이미 기등록된 종목에 대해서는 수량을 변경할 수 없습니다.\n" +
+                "삭제 후 재등록 바랍니다."
+        );
+        return;
+      }
+
       fetch("/myetf/edit", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json; charset=UTF-8"
+        },
         body: JSON.stringify({
-          etfName: /*[[${etfName}]]*/,
+          etfName: etfName, // ⭐ 이미 선언된 변수 사용
+          etfDescription: document.getElementById("etfDescription").value,
           items: tempItems
         })
-      }).then(res => {
-        if (!res.ok) throw new Error();
-        location.reload();
-      });
+      })
+              .then(res => {
+                if (!res.ok) {
+                  return res.text().then(t => {
+                    throw new Error(t || "저장 실패");
+                  });
+                }
+              })
+              .then(() => location.reload())
+              .catch(err => alert(err.message));
     }
 
-    const etfName = /*[[${etfName}]]*/;
+
+
+
+
 
     function openRestoreModal() {
 

@@ -1,5 +1,6 @@
 package com.stock.managing.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -7,6 +8,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class MyEtfEditItemDto {
 
     /** 기존 ETF 종목이면 존재, 신규면 null */

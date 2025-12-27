@@ -15,8 +15,12 @@
         .nav-ani {
             position: relative;
             font-weight: 500;
-            padding: 0.5rem 0.8rem;
+            padding: 0.5rem 1.05rem; /* ← 기존 0.8 → 1.05 */
             transition: color 0.2s ease-in-out;
+        }
+
+        .navbar-nav.mx-auto .nav-item {
+            margin: 0 0.15rem;
         }
 
         /* 기본 밑줄 (숨겨져 있음) */
@@ -54,6 +58,11 @@
         html {
             overflow-y: scroll;
         }
+
+        /* ✅ Bootstrap modal scrollbar shift fix */
+        body.modal-open {
+            padding-right: 0 !important;
+        }
     </style>
 
 </head>
@@ -90,12 +99,12 @@
                 <li class="nav-item"><a class="nav-link nav-ani" href="/board/listUS">🇺🇸 미국장</a></li>
                 <li class="nav-item"><a class="nav-link nav-ani" href="/board/dualMomentumList">📈 수익률 상위</a></li>
                 <li class="nav-item"><a class="nav-link nav-ani" href="/board/stockInfo">🔍 종목검색</a></li>
-                <li class="nav-item"><a class="nav-link nav-ani" href="/kodex/summary">🔍 ETF검색</a></li>
+                <li class="nav-item"><a class="nav-link nav-ani" href="/kodex/summary">📊 ETF검색</a></li>
                 <li class="nav-item" sec:authorize="isAuthenticated()">
                     <a class="nav-link nav-ani" href="/mystock/list">⭐ 나의 관심 종목</a>
                 </li>
                 <li class="nav-item" sec:authorize="isAuthenticated()">
-                    <a class="nav-link nav-ani" href="/myetf/list">⭐ 나의 ETF 리스트</a>
+                    <a class="nav-link nav-ani" href="/myetf/list">🗂️    나의 ETF 리스트</a>
                 </li>
                 <li class="nav-item" sec:authorize="hasRole('ADMIN')">
                     <a class="nav-link nav-ani" href="/manage/batch/history">🛠 관리자</a>

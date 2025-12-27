@@ -12,17 +12,20 @@ import java.util.Optional;
 public interface MyEtfItemRepository extends JpaRepository<MyEtfItemEntity, Long> {
 
     @Query("""
-        select 
-            e.etfName,
-            max(e.etfDescription),
-            count(e.id),
-            sum(coalesce(e.priceAtAdd, 0) * e.quantity)
-        from MyEtfItemEntity e
-        where e.userId = :userId
-          and e.deletedYn = 'N'
-        group by e.etfName
-    """)
+            select
+                e.etfName,
+                max(e.etfDescription),
+                count(e.id),
+                sum(coalesce(e.priceAtAdd, 0) * e.quantity)
+            from MyEtfItemEntity e
+            where e.userId = :userId
+              and e.deletedYn = 'N'
+            group by e.etfName
+            having count(e.id) > 0
+            order by min(e.createdAt) desc
+            """)
     List<Object[]> findMyEtfSummary(@Param("userId") String userId);
+
 
     List<MyEtfItemEntity> findByUserIdAndEtfNameAndDeletedYn(
             String userId,
@@ -61,6 +64,22 @@ public interface MyEtfItemRepository extends JpaRepository<MyEtfItemEntity, Long
     where e.userId = :userId
 """)
     List<String> findDistinctEtfNameByUserId(@Param("userId") String userId);
+
+
+    @Modifying
+    @Query("""
+            update MyEtfItemEntity e
+               set e.etfDescription = :description
+             where e.userId = :userId
+               and e.etfName = :etfName
+               and e.deletedYn = 'N'
+            """)
+    void updateEtfDescription(
+            String userId,
+            String etfName,
+            String description
+    );
+
 
 
 }

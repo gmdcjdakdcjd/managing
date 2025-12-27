@@ -18,30 +18,32 @@ import java.util.List;
 public class MyEtfService {
 
     private final MyEtfItemRepository etfItemRepository;
-    private final StockViewService stockViewService;
     private final MyEtfHistoryRepository historyRepository;
+    private final StockViewService stockViewService;
     private final ExchangeRateService exchangeRateService;
 
+    /* =========================
+       ETF 목록 요약
+       ========================= */
     public List<MyEtfSummaryDto> getMyEtfList(String userId) {
 
         double usdRate = exchangeRateService.getUsdRate();
-
-        // ETF 이름 목록만 가져온다 (distinct)
-        List<String> etfNames =
-                etfItemRepository.findDistinctEtfNameByUserId(userId);
-
+        List<Object[]> rows = etfItemRepository.findMyEtfSummary(userId);
         List<MyEtfSummaryDto> result = new ArrayList<>();
 
-        for (String etfName : etfNames) {
+        for (Object[] r : rows) {
+
+            String etfName = (String) r[0];
+            String etfDescription = (String) r[1];
+            long itemCount = (long) r[2];
+            double investedAmount = ((Number) r[3]).doubleValue();
+
+            double evaluatedAmount = 0;
 
             List<MyEtfItemEntity> items =
                     etfItemRepository.findByUserIdAndEtfNameAndDeletedYn(
                             userId, etfName, "N"
                     );
-
-            long itemCount = items.size();
-            long investedAmount = 0;
-            long evaluatedAmount = 0;
 
             for (MyEtfItemEntity item : items) {
 
@@ -49,21 +51,14 @@ public class MyEtfService {
                         item.getCode() != null &&
                                 item.getCode().matches(".*[A-Za-z].*");
 
-                // 🔹 투자금 (편입가 기준)
-                if (item.getPriceAtAdd() != null) {
-                    double price = item.getPriceAtAdd();
-                    if (isUsStock) price *= usdRate;
-                    investedAmount += Math.round(price * item.getQuantity());
-                }
-
-                // 🔹 평가금 (현재가 기준)
-                StockDTO stock = stockViewService.getStockInfo(null, item.getCode());
+                StockDTO stock =
+                        stockViewService.getStockInfo(null, item.getCode());
                 if (stock == null || stock.getPriceList().isEmpty()) continue;
 
-                double currentPrice = stock.getPriceList().get(0).getClose();
-                if (isUsStock) currentPrice *= usdRate;
+                double price = stock.getPriceList().get(0).getClose();
+                if (isUsStock) price *= usdRate;
 
-                evaluatedAmount += Math.round(currentPrice * item.getQuantity());
+                evaluatedAmount += price * item.getQuantity();
             }
 
             double profitRate =
@@ -74,9 +69,10 @@ public class MyEtfService {
             result.add(
                     MyEtfSummaryDto.builder()
                             .etfName(etfName)
+                            .etfDescription(etfDescription)
                             .itemCount(itemCount)
-                            .investedAmount((double) investedAmount)
-                            .evaluatedAmount((double) evaluatedAmount)
+                            .investedAmount(investedAmount)
+                            .evaluatedAmount(evaluatedAmount)
                             .profitRate(profitRate)
                             .build()
             );
@@ -85,16 +81,14 @@ public class MyEtfService {
         return result;
     }
 
-
-
+    /* =========================
+       ETF 생성
+       ========================= */
     @Transactional
-    public void createEtf(
-            String userId,
-            MyEtfCreateRequestDto request
-    ) {
+    public void createEtf(String userId, MyEtfCreateRequestDto request) {
+
         for (MyEtfItemRequestDto item : request.getItems()) {
 
-            // 현재가 조회
             StockDTO stock = stockViewService.getStockInfo(null, item.getCode());
             Double priceAtAdd = null;
 
@@ -118,8 +112,9 @@ public class MyEtfService {
         }
     }
 
-
-
+    /* =========================
+       ETF 상세 종목
+       ========================= */
     public List<MyEtfItemDto> getEtfItemList(String userId, String etfName) {
 
         List<MyEtfItemEntity> items =
@@ -133,7 +128,6 @@ public class MyEtfService {
 
             MyEtfItemDto dto = MyEtfItemDto.fromEntity(item);
 
-            // 🔴 현재가 조회
             StockDTO stock = stockViewService.getStockInfo(null, item.getCode());
             if (stock == null || stock.getPriceList().isEmpty()) {
                 dto.setCurrentPrice(null);
@@ -150,10 +144,9 @@ public class MyEtfService {
         return result;
     }
 
-
-
-
-
+    /* =========================
+       ETF 설명 조회
+       ========================= */
     public String getEtfDescription(String userId, String etfName) {
         return etfItemRepository
                 .findFirstByUserIdAndEtfNameAndDeletedYn(userId, etfName, "N")
@@ -161,14 +154,25 @@ public class MyEtfService {
                 .orElse(null);
     }
 
+    /* =========================
+       ETF 편집 (설명 + 종목 추가/삭제)
+       ========================= */
     @Transactional
     public void editEtf(String userId, MyEtfEditRequestDto request) {
 
+        // ✅ 1. ETF 설명 수정 (메타 정보)
+        if (request.getEtfDescription() != null) {
+            etfItemRepository.updateEtfDescription(
+                    userId,
+                    request.getEtfName(),
+                    request.getEtfDescription()
+            );
+        }
+
+        // ✅ 2. ETF 구성 종목 처리
         for (MyEtfEditItemDto dto : request.getItems()) {
 
-            // =========================
-            // 1️⃣ 신규 종목 추가
-            // =========================
+            // 신규 종목 추가
             if (dto.getId() == null && !dto.isDeleted()) {
 
                 StockDTO stock = stockViewService.getStockInfo(null, dto.getCode());
@@ -192,14 +196,12 @@ public class MyEtfService {
                 continue;
             }
 
-            // =========================
-            // 2️⃣ 기존 종목 처리
-            // =========================
+            // 기존 종목
             MyEtfItemEntity entity = etfItemRepository
                     .findById(dto.getId())
                     .orElseThrow(() -> new IllegalStateException("ETF 종목 없음"));
 
-            // 🔥 삭제 처리
+            // 삭제만 허용
             if (dto.isDeleted()) {
                 entity.setDeletedYn("Y");
                 entity.setDeletedAt(LocalDateTime.now());
@@ -207,17 +209,13 @@ public class MyEtfService {
                 historyRepository.save(
                         MyEtfItemHistoryEntity.fromEntity(entity)
                 );
-                continue;
-            }
-
-            // 🔥 수량 변경
-            if (!entity.getQuantity().equals(dto.getQuantity())) {
-                entity.setQuantity(dto.getQuantity());
             }
         }
     }
 
-
+    /* =========================
+       ETF 종목 복구
+       ========================= */
     @Transactional
     public void restoreEtfItems(String userId, MyEtfRestoreRequestDto request) {
 
@@ -253,16 +251,16 @@ public class MyEtfService {
             }
 
             etfItemRepository.save(item);
-
-            // 🔥 여기 핵심
             hist.markRestored();
         }
     }
 
+    /* =========================
+       ETF 상세 요약
+       ========================= */
     public MyEtfDetailSummaryDto getEtfDetailSummary(String userId, String etfName) {
 
         double usdRate = exchangeRateService.getUsdRate();
-
         long totalInvested = 0;
         long totalEvaluated = 0;
 
@@ -279,13 +277,11 @@ public class MyEtfService {
                     item.getCode() != null &&
                             item.getCode().matches(".*[A-Za-z].*");
 
-            // 🔹 편입금액
             double investedPrice = item.getPriceAtAdd();
             if (isUsStock) investedPrice *= usdRate;
 
             totalInvested += Math.round(investedPrice * item.getQuantity());
 
-            // 🔹 현재가
             StockDTO stock = stockViewService.getStockInfo(null, item.getCode());
             if (stock == null || stock.getPriceList().isEmpty()) continue;
 
@@ -309,9 +305,11 @@ public class MyEtfService {
                 .build();
     }
 
-
-
-
-
-
+    /* =========================
+       ETF 삭제
+       ========================= */
+    @Transactional
+    public void deleteEtf(String userId, String etfName) {
+        etfItemRepository.softDeleteByUserIdAndEtfName(userId, etfName);
+    }
 }
